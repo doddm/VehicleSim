@@ -7,9 +7,21 @@ add_executable(${PROJECT_NAME} main.cpp)
 
 add_subdirectory(external/bullet)
 
-target_include_directories(${PROJECT_NAME} PUBLIC external/bullet/include)
+target_include_directories(${PROJECT_NAME} PUBLIC external/bullet/src)
 
-#target_link_directories(${PROJECT_NAME} PRIVATE external/glfw/src)
+target_link_directories(${PROJECT_NAME} PUBLIC lib)
+target_link_libraries(${PROJECT_NAME} BulletDynamics BulletCollision LinearMath Bullet3Common)
 
-#target_link_libraries(${PROJECT_NAME} glfw)
-
+if(MSVC)
+    if (NOT USE_MSVC_RUNTIME_LIBRARY_DLL)
+        # We statically link to reduce dependencies
+        foreach(flag_var CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO )
+            if(${flag_var} MATCHES "/MD")
+                string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+            endif(${flag_var} MATCHES "/MD")
+            if(${flag_var} MATCHES "/MDd")
+                string(REGEX REPLACE "/MDd" "/MTd" ${flag_var} "${${flag_var}}")
+            endif(${flag_var} MATCHES "/MDd")
+        endforeach(flag_var)
+    endif (NOT USE_MSVC_RUNTIME_LIBRARY_DLL)
+endif(MSVC)
