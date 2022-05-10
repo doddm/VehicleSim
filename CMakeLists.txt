@@ -3,11 +3,17 @@ project(bulletGame)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp)
 
+add_subdirectory(BasicDemo)
 add_subdirectory(external/bullet)
+add_subdirectory(src)
 
-target_include_directories(${PROJECT_NAME} PUBLIC external/bullet/src)
+set(INCLUDE_DIRS
+        external/bullet/src
+        )
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 
 target_link_directories(${PROJECT_NAME} PUBLIC lib)
 target_link_libraries(${PROJECT_NAME} BulletDynamics BulletCollision LinearMath Bullet3Common)
