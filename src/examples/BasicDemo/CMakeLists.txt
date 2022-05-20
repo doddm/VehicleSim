@@ -2,11 +2,11 @@
 cmake_minimum_required(VERSION 3.13)
 project(App_BasicExample_Michael)
 
-SET(BULLET_PHYSICS_ROOT ../external/bullet)
-SET(BULLET_PHYSICS_EXAMPLES ../external/bullet/examples)
+SET(BULLET_PHYSICS_ROOT ../../../external/bullet)
+SET(BULLET_PHYSICS_EXAMPLES ../../../external/bullet/examples)
 
 INCLUDE_DIRECTORIES(
-        ../external/bullet/src
+        ../../../external/bullet/src
 )
 
 LINK_LIBRARIES(
@@ -15,14 +15,14 @@ LINK_LIBRARIES(
 
 IF (WIN32)
 	ADD_EXECUTABLE(${PROJECT_NAME}
-		BasicExample.cpp
-		main.cpp
+            BasicExample.cpp
+            main.cpp
 		${BULLET_PHYSICS_ROOT}/build3/bullet.rc
 	)
 ELSE()
 	ADD_EXECUTABLE(${PROJECT_NAME}
-		BasicExample.cpp
-		main.cpp
+            BasicExample.cpp
+            main.cpp
 	)
 ENDIF()
 
@@ -48,7 +48,7 @@ INCLUDE_DIRECTORIES(
 
 
 SET(AppBasicExampleGui_SRCS
-	BasicExample.cpp
+        BasicExample.cpp
         ${BULLET_PHYSICS_ROOT}/build3/bullet.rc
 	    ${BULLET_PHYSICS_EXAMPLES}/StandaloneMain/main_opengl_single_example.cpp
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/OpenGLGuiHelper.cpp

@@ -23,7 +23,7 @@ subject to the following restrictions:
 #include "LinearMath/btVector3.h"
 #include "LinearMath/btAlignedObjectArray.h"
 
-#include "../external/bullet/examples/CommonInterfaces/CommonRigidBodyBase.h"
+#include "CommonInterfaces/CommonRigidBodyBase.h"
 
 struct BasicExample : public CommonRigidBodyBase
 {

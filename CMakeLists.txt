@@ -4,7 +4,8 @@ project(bulletGame)
 set(CMAKE_CXX_STANDARD 14)
 
 
-add_subdirectory(BasicDemo)
+add_subdirectory(src/examples/BasicDemo)
+add_subdirectory(src/examples/MyDemo)
 add_subdirectory(external/bullet)
 add_subdirectory(src)
 
