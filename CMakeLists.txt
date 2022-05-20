@@ -3,7 +3,6 @@ project(bulletGame)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
 
 add_subdirectory(BasicDemo)
 add_subdirectory(external/bullet)
