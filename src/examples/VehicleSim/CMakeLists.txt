@@ -1,40 +1,9 @@
 # App_BasicExample is a minimal sample creating, stepping and deleting a Bullet dynamics world
 cmake_minimum_required(VERSION 3.13)
-project(App_BasicExample_Michael)
+project(VehicleSim)
 
 SET(BULLET_PHYSICS_ROOT ../../../external/bullet)
 SET(BULLET_PHYSICS_EXAMPLES ../../../external/bullet/examples)
-
-INCLUDE_DIRECTORIES(
-        ../../../external/bullet/src
-)
-
-LINK_LIBRARIES(
- BulletDynamics BulletCollision LinearMath
-)
-
-IF (WIN32)
-	ADD_EXECUTABLE(${PROJECT_NAME}
-            BasicExample.cpp
-            main.cpp
-		${BULLET_PHYSICS_ROOT}/build3/bullet.rc
-	)
-ELSE()
-	ADD_EXECUTABLE(${PROJECT_NAME}
-            BasicExample.cpp
-            main.cpp
-	)
-ENDIF()
-
-IF (INTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES)
-			SET_TARGET_PROPERTIES(App_BasicExample PROPERTIES  DEBUG_POSTFIX "_Debug")
-			SET_TARGET_PROPERTIES(App_BasicExample PROPERTIES  MINSIZEREL_POSTFIX "_MinsizeRel")
-			SET_TARGET_PROPERTIES(App_BasicExample PROPERTIES  RELWITHDEBINFO_POSTFIX "_RelWithDebugInfo")
-ENDIF(INTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES)
-
-
-
-
 
 #################
 # Standalone BasicExampleGui using OpenGL (but not the example browser)
@@ -47,11 +16,11 @@ INCLUDE_DIRECTORIES(
 )
 
 
-SET(AppBasicExampleGui_SRCS
-        BasicExample.cpp
+SET(VehicleSim_SRCS
+        VehicleSim.cpp
+        ../../graphics/OpenGLGuiHelper.cpp
         ${BULLET_PHYSICS_ROOT}/build3/bullet.rc
 	    ${BULLET_PHYSICS_EXAMPLES}/StandaloneMain/main_opengl_single_example.cpp
-        ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/OpenGLGuiHelper.cpp
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/GL_ShapeDrawer.cpp
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/CollisionShape2TriangleMesh.cpp
         ${BULLET_PHYSICS_EXAMPLES}/Utils/b3Clock.cpp
@@ -91,8 +60,8 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 
-ADD_EXECUTABLE(${PROJECT_NAME}_Gui
-                ${AppBasicExampleGui_SRCS}
+ADD_EXECUTABLE(${PROJECT_NAME}
+                ${VehicleSim_SRCS}
 )
 
 

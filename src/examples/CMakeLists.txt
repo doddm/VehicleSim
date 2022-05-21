@@ -1,2 +1,2 @@
-add_subdirectory(BasicDemo)
 add_subdirectory(MyDemo)
+add_subdirectory(VehicleSim)
