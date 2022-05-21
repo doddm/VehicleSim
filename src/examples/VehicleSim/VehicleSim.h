@@ -19,3 +19,10 @@ subject to the following restrictions:
 class CommonExampleInterface* BasicExampleCreateFunc(struct CommonExampleOptions& options);
 
 #endif  //BASIC_DEMO_PHYSICS_SETUP_H
+
+//#ifndef FORKLIFT_DEMO_H
+//#define FORKLIFT_DEMO_H
+//
+//class CommonExampleInterface* ForkLiftCreateFunc(struct CommonExampleOptions& options);
+//
+//#endif  // FORKLIFT_DEMO_H
