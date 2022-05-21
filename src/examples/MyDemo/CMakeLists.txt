@@ -18,9 +18,9 @@ INCLUDE_DIRECTORIES(
 
 SET(AppBasicExampleGui_SRCS
         MyExample.cpp
+        ../../graphics/OpenGLGuiHelper.cpp
         ${BULLET_PHYSICS_ROOT}/build3/bullet.rc
 	    ${BULLET_PHYSICS_EXAMPLES}/StandaloneMain/main_opengl_single_example.cpp
-        ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/OpenGLGuiHelper.cpp
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/GL_ShapeDrawer.cpp
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/CollisionShape2TriangleMesh.cpp
         ${BULLET_PHYSICS_EXAMPLES}/Utils/b3Clock.cpp

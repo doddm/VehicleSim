@@ -1,0 +1,2 @@
+add_subdirectory(BasicDemo)
+add_subdirectory(MyDemo)
