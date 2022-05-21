@@ -1,5 +1,9 @@
 add_executable(${PROJECT_NAME} main.cpp)
 
+add_subdirectory(examples/BasicDemo)
+add_subdirectory(examples/MyDemo)
+add_subdirectory(graphics)
+
 if(MSVC)
     if (NOT USE_MSVC_RUNTIME_LIBRARY_DLL)
         # We statically link to reduce dependencies

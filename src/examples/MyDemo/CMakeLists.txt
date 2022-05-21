@@ -1,40 +1,9 @@
 # App_BasicExample is a minimal sample creating, stepping and deleting a Bullet dynamics world
 cmake_minimum_required(VERSION 3.13)
-project(MyExample)
+project(MyExample_GUI)
 
 SET(BULLET_PHYSICS_ROOT ../../../external/bullet)
 SET(BULLET_PHYSICS_EXAMPLES ../../../external/bullet/examples)
-
-INCLUDE_DIRECTORIES(
-        ../../../external/bullet/src
-)
-
-LINK_LIBRARIES(
- BulletDynamics BulletCollision LinearMath
-)
-
-IF (WIN32)
-	ADD_EXECUTABLE(${PROJECT_NAME}
-            MyExample.cpp
-            main.cpp
-		${BULLET_PHYSICS_ROOT}/build3/bullet.rc
-	)
-ELSE()
-	ADD_EXECUTABLE(${PROJECT_NAME}
-            MyExample.cpp
-            main.cpp
-	)
-ENDIF()
-
-IF (INTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES)
-			SET_TARGET_PROPERTIES(App_BasicExample PROPERTIES  DEBUG_POSTFIX "_Debug")
-			SET_TARGET_PROPERTIES(App_BasicExample PROPERTIES  MINSIZEREL_POSTFIX "_MinsizeRel")
-			SET_TARGET_PROPERTIES(App_BasicExample PROPERTIES  RELWITHDEBINFO_POSTFIX "_RelWithDebugInfo")
-ENDIF(INTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES)
-
-
-
-
 
 #################
 # Standalone BasicExampleGui using OpenGL (but not the example browser)
@@ -91,7 +60,7 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 
-ADD_EXECUTABLE(${PROJECT_NAME}_Gui
+ADD_EXECUTABLE(${PROJECT_NAME}
                 ${AppBasicExampleGui_SRCS}
 )
 
