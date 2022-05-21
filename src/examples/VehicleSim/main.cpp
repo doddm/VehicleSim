@@ -65,7 +65,7 @@ public:
 };
 int main(int argc, char* argv[])
 {
-	SimpleOpenGL3App* app = new SimpleOpenGL3App("Bullet Standalone Example", 1024, 768, true);
+	SimpleOpenGL3App* app = new SimpleOpenGL3App("Bullet Standalone Example", 1920, 1080, true);
 
 	prevMouseButtonCallback = app->m_window->getMouseButtonCallback();
 	prevMouseMoveCallback = app->m_window->getMouseMoveCallback();

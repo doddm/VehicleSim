@@ -13,16 +13,16 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef BASIC_EXAMPLE_H
-#define BASIC_EXAMPLE_H
-
-class CommonExampleInterface* BasicExampleCreateFunc(struct CommonExampleOptions& options);
-
-#endif  //BASIC_DEMO_PHYSICS_SETUP_H
-
-//#ifndef FORKLIFT_DEMO_H
-//#define FORKLIFT_DEMO_H
+//#ifndef BASIC_EXAMPLE_H
+//#define BASIC_EXAMPLE_H
 //
-//class CommonExampleInterface* ForkLiftCreateFunc(struct CommonExampleOptions& options);
+//class CommonExampleInterface* BasicExampleCreateFunc(struct CommonExampleOptions& options);
 //
-//#endif  // FORKLIFT_DEMO_H
+//#endif  //BASIC_DEMO_PHYSICS_SETUP_H
+
+#ifndef FORKLIFT_DEMO_H
+#define FORKLIFT_DEMO_H
+
+class CommonExampleInterface* ForkLiftCreateFunc(struct CommonExampleOptions& options);
+
+#endif  // FORKLIFT_DEMO_H

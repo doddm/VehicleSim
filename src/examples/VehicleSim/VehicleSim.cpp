@@ -13,7 +13,7 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#if 1
+#if 0
 
 #include "VehicleSim.h"
 
@@ -126,6 +126,7 @@ B3_STANDALONE_EXAMPLE(BasicExampleCreateFunc)
 
 #endif
 
+#define forklift_demo
 #ifdef forklift_demo
 
 /*
@@ -1286,5 +1287,7 @@ CommonExampleInterface* ForkLiftCreateFunc(struct CommonExampleOptions& options)
 {
     return new ForkLiftDemo(options.m_guiHelper);
 }
+
+B3_STANDALONE_EXAMPLE(ForkLiftCreateFunc)
 
 #endif
