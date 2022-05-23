@@ -19,9 +19,170 @@ subject to the following restrictions:
 
 #include "../../../external/bullet/examples/OpenGLWindow/SimpleOpenGL3App.h"
 #include "../../graphics/OpenGLGuiHelper.h"
+#include "LinearMath/btIDebugDraw.h"
+
+static CommonGraphicsApp* s_app = 0;
+static CommonWindowInterface* s_window = 0;
 
 CommonExampleInterface* example;
 int gSharedMemoryKey = -1;
+static bool gEnableDefaultKeyboardShortcuts = true;
+static bool gEnableDefaultMousePicking = true;
+bool renderGui = true;
+bool gDisableDemoSelection = false;
+bool visualWireframe = false;
+static bool renderVisualGeometry = true;
+static bool renderGrid = true;
+static bool gEnableRenderLoop = true;
+static bool pauseSimulation = false;
+static bool singleStepSimulation = false;
+
+int gDebugDrawFlags = 0;
+
+#ifndef USE_OPENGL3
+extern bool useShadowMap;
+#endif
+
+b3KeyboardCallback prevKeyboardCallback = 0;
+
+void MyKeyboardCallback(int key, int state)
+{
+    //b3Printf("key=%d, state=%d", key, state);
+    bool handled = false;
+
+    if (!handled && example)
+    {
+        handled = example->keyboardCallback(key, state);
+    }
+
+    if (gEnableDefaultKeyboardShortcuts)
+    {
+        if (key == 'a' && state)
+        {
+            gDebugDrawFlags ^= btIDebugDraw::DBG_DrawAabb;
+        }
+        if (key == 'c' && state)
+        {
+            gDebugDrawFlags ^= btIDebugDraw::DBG_DrawContactPoints;
+        }
+        if (key == 'j' && state)
+        {
+            gDebugDrawFlags ^= btIDebugDraw::DBG_DrawFrames;
+        }
+
+        if (key == 'k' && state)
+        {
+            gDebugDrawFlags ^= btIDebugDraw::DBG_DrawConstraints;
+        }
+
+        if (key == 'l' && state)
+        {
+            gDebugDrawFlags ^= btIDebugDraw::DBG_DrawConstraintLimits;
+        }
+        if (key == 'w' && state)
+        {
+            visualWireframe = !visualWireframe;
+            gDebugDrawFlags ^= btIDebugDraw::DBG_DrawWireframe;
+        }
+
+        if (key == 'v' && state)
+        {
+            renderVisualGeometry = !renderVisualGeometry;
+        }
+        if (key == 'g' && state)
+        {
+            renderGrid = !renderGrid;
+            renderGui = !renderGui;
+        }
+
+        if (key == 'i' && state)
+        {
+            pauseSimulation = !pauseSimulation;
+        }
+        if (key == 'o' && state)
+        {
+            singleStepSimulation = true;
+        }
+
+#ifndef NO_OPENGL3
+        if (key == 's' && state)
+        {
+            useShadowMap = !useShadowMap;
+        }
+#endif
+
+    }
+    if (key == B3G_ESCAPE && s_window)
+    {
+        s_window->setRequestExit();
+    }
+
+    if (prevKeyboardCallback)
+        prevKeyboardCallback(key, state);
+}
+
+#include "../../../external/bullet/examples/SharedMemory/SharedMemoryPublic.h"
+
+void OpenGLExampleBrowserVisualizerFlagCallback(int flag, bool enable)
+{
+    if (flag == COV_ENABLE_Y_AXIS_UP)
+    {
+        //either Y = up or Z
+        int upAxis = enable ? 1 : 2;
+        s_app->setUpAxis(upAxis);
+    }
+
+    if (flag == COV_ENABLE_RENDERING)
+    {
+        gEnableRenderLoop = (enable != 0);
+    }
+
+    if (flag == COV_ENABLE_SINGLE_STEP_RENDERING)
+    {
+        if (enable)
+        {
+            gEnableRenderLoop = false;
+            singleStepSimulation = true;
+        }
+        else
+        {
+            gEnableRenderLoop = true;
+            singleStepSimulation = false;
+        }
+    }
+
+    if (flag == COV_ENABLE_SHADOWS)
+    {
+        useShadowMap = enable;
+    }
+    if (flag == COV_ENABLE_GUI)
+    {
+        renderGui = enable;
+        renderGrid = enable;
+    }
+
+    if (flag == COV_ENABLE_KEYBOARD_SHORTCUTS)
+    {
+        gEnableDefaultKeyboardShortcuts = enable;
+    }
+    if (flag == COV_ENABLE_MOUSE_PICKING)
+    {
+        gEnableDefaultMousePicking = enable;
+    }
+
+    if (flag == COV_ENABLE_WIREFRAME)
+    {
+        visualWireframe = enable;
+        if (visualWireframe)
+        {
+            gDebugDrawFlags |= btIDebugDraw::DBG_DrawWireframe;
+        }
+        else
+        {
+            gDebugDrawFlags &= ~btIDebugDraw::DBG_DrawWireframe;
+        }
+    }
+}
 
 b3MouseMoveCallback prevMouseMoveCallback = 0;
 static void OnMouseMove(float x, float y)
@@ -72,10 +233,12 @@ int main(int argc, char* argv[])
 
 	app->m_window->setMouseButtonCallback((b3MouseButtonCallback)OnMouseDown);
 	app->m_window->setMouseMoveCallback((b3MouseMoveCallback)OnMouseMove);
+    app->m_window->setKeyboardCallback(MyKeyboardCallback);
+    s_window = app->m_window;
+    s_app = app;
 
 	OpenGLGuiHelper gui(app, false);
-	//LessDummyGuiHelper gui(app);
-	//DummyGUIHelper gui;
+    gui.setVisualizerFlagCallback(OpenGLExampleBrowserVisualizerFlagCallback);
 
 	CommonExampleOptions options(&gui);
 

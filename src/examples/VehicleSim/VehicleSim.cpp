@@ -1,136 +1,5 @@
 /*
 Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2015 Google Inc. http://bulletphysics.org
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose, 
-including commercial applications, and to alter it and redistribute it freely, 
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
-
-#if 0
-
-#include "VehicleSim.h"
-
-#include "btBulletDynamicsCommon.h"
-#define ARRAY_SIZE_Y 7
-#define ARRAY_SIZE_X 7
-#define ARRAY_SIZE_Z 7
-
-#include "LinearMath/btVector3.h"
-#include "LinearMath/btAlignedObjectArray.h"
-
-#include "../../physics/CommonRigidBodyBase.h"
-
-struct BasicExample : public CommonRigidBodyBase
-{
-	BasicExample(struct GUIHelperInterface* helper)
-		: CommonRigidBodyBase(helper)
-	{
-	}
-	virtual ~BasicExample() {}
-	virtual void initPhysics();
-	virtual void renderScene();
-	void resetCamera()
-	{
-		float dist = 4;
-		float pitch = -35;
-		float yaw = 52;
-		float targetPos[3] = {0, 0, 0};
-		m_guiHelper->resetCamera(dist, yaw, pitch, targetPos[0], targetPos[1], targetPos[2]);
-	}
-};
-
-void BasicExample::initPhysics()
-{
-	m_guiHelper->setUpAxis(1);
-
-	createEmptyDynamicsWorld();
-	//m_dynamicsWorld->setGravity(btVector3(0,0,0));
-	m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
-
-	if (m_dynamicsWorld->getDebugDrawer())
-		m_dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe + btIDebugDraw::DBG_DrawContactPoints);
-
-	///create a few basic rigid bodies
-	btBoxShape* groundShape = createBoxShape(btVector3(btScalar(10.), btScalar(10.), btScalar(10.)));
-
-	//groundShape->initializePolyhedralFeatures();
-	//btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),50);
-
-	m_collisionShapes.push_back(groundShape);
-
-	btTransform groundTransform;
-	groundTransform.setIdentity();
-	groundTransform.setOrigin(btVector3(0, -10, 0));
-
-    btScalar groundMass(0.);
-    createRigidBody(groundMass, groundTransform, groundShape, btVector4(0, 0, 1, 1));
-
-    //create a few dynamic rigidbodies
-    // Re-using the same collision is better for memory usage and performance
-
-    btBoxShape* colShape = createBoxShape(btVector3(.1, .1, .1));
-
-    //btCollisionShape* colShape = new btSphereShape(btScalar(1.));
-    m_collisionShapes.push_back(colShape);
-
-    /// Create Dynamic Objects
-    btTransform startTransform;
-    startTransform.setIdentity();
-
-    btScalar mass(1.f);
-
-    //rigidbody is dynamic if and only if mass is non zero, otherwise static
-    bool isDynamic = (mass != 0.f);
-
-    btVector3 localInertia(0, 0, 0);
-    if (isDynamic)
-        colShape->calculateLocalInertia(mass, localInertia);
-
-    for (int k = 0; k < ARRAY_SIZE_Y; k++)
-    {
-        for (int i = 0; i < ARRAY_SIZE_X; i++)
-        {
-            for (int j = 0; j < ARRAY_SIZE_Z; j++)
-            {
-                startTransform.setOrigin(btVector3(
-                    btScalar(0.2 * i),
-                    btScalar(2 + .2 * k),
-                    btScalar(0.2 * j)));
-
-                createRigidBody(mass, startTransform, colShape);
-            }
-        }
-    }
-
-	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
-}
-
-void BasicExample::renderScene()
-{
-	CommonRigidBodyBase::renderScene();
-}
-
-CommonExampleInterface* BasicExampleCreateFunc(CommonExampleOptions& options)
-{
-	return new BasicExample(options.m_guiHelper);
-}
-
-B3_STANDALONE_EXAMPLE(BasicExampleCreateFunc)
-
-#endif
-
-#define forklift_demo
-#ifdef forklift_demo
-
-/*
-Bullet Continuous Collision Detection and Physics Library
 Copyright (c) 2003-2006 Erwin Coumans  https://bulletphysics.org
 
 This software is provided 'as-is', without any express or implied warranty.
@@ -160,6 +29,7 @@ class btVehicleTuning;
 struct btVehicleRaycaster;
 class btCollisionShape;
 
+#include <iostream>
 #include "BulletDynamics/Vehicle/btRaycastVehicle.h"
 #include "BulletDynamics/ConstraintSolver/btHingeConstraint.h"
 #include "BulletDynamics/ConstraintSolver/btSliderConstraint.h"
@@ -243,10 +113,6 @@ public:
     virtual void clientResetScene();
 
     virtual void displayCallback();
-
-    virtual void specialKeyboard(int key, int x, int y);
-
-    virtual void specialKeyboardUp(int key, int x, int y);
 
     virtual bool mouseMoveCallback(float x, float y)
     {
@@ -361,8 +227,6 @@ ForkLiftDemo::ForkLiftDemo(struct GUIHelperInterface* helper)
     m_wheelShape = 0;
     m_cameraPosition = btVector3(30, 30, 30);
     m_useDefaultCamera = false;
-    //	setTexturing(true);
-    //	setShadows(true);
 }
 
 void ForkLiftDemo::exitPhysics()
@@ -511,7 +375,6 @@ void ForkLiftDemo::initPhysics()
     tr.setOrigin(btVector3(0, 0.f, 0));
 
     m_carChassis = localCreateRigidBody(800, tr, compound);  //chassisShape);
-    //m_carChassis->setDamping(0.2,0.2);
 
     m_wheelShape = new btCylinderShapeX(btVector3(wheelWidth, wheelRadius, wheelRadius));
 
@@ -545,7 +408,6 @@ void ForkLiftDemo::initPhysics()
         localB.getBasis().setEulerZYX(0, M_PI_2, 0);
         localB.setOrigin(btVector3(0.0, -1.5, -0.05));
         m_liftHinge = new btHingeConstraint(*m_carChassis, *m_liftBody, localA, localB);
-        //		m_liftHinge->setLimit(-LIFT_EPS, LIFT_EPS);
         m_liftHinge->setLimit(0.0f, 0.0f);
         m_dynamicsWorld->addConstraint(m_liftHinge, true);
 
@@ -584,8 +446,6 @@ void ForkLiftDemo::initPhysics()
         m_forkSlider = new btSliderConstraint(*m_liftBody, *m_forkBody, localA, localB, true);
         m_forkSlider->setLowerLinLimit(0.1f);
         m_forkSlider->setUpperLinLimit(0.1f);
-        //		m_forkSlider->setLowerAngLimit(-LIFT_EPS);
-        //		m_forkSlider->setUpperAngLimit(LIFT_EPS);
         m_forkSlider->setLowerAngLimit(0.0f);
         m_forkSlider->setUpperAngLimit(0.0f);
         m_dynamicsWorld->addConstraint(m_forkSlider, true);
@@ -655,8 +515,6 @@ void ForkLiftDemo::initPhysics()
 
     resetForklift();
 
-    //	setCameraDistance(26.f);
-
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
@@ -708,71 +566,10 @@ void ForkLiftDemo::renderScene()
         m_vehicle->getWheelInfo(i).m_worldTransform.getOpenGLMatrix(m);
         //		m_shapeDrawer->drawOpenGL(m,m_wheelShape,wheelColor,getDebugMode(),worldBoundsMin,worldBoundsMax);
     }
-
-#if 0
-    int lineWidth=400;
-	int xStart = m_glutScreenWidth - lineWidth;
-	int yStart = 20;
-
-	if((getDebugMode() & btIDebugDraw::DBG_NoHelpText)==0)
-	{
-		setOrthographicProjection();
-		glDisable(GL_LIGHTING);
-		glColor3f(0, 0, 0);
-		char buf[124];
-
-		sprintf(buf,"SHIFT+Cursor Left/Right - rotate lift");
-		GLDebugDrawString(xStart,20,buf);
-		yStart+=20;
-		sprintf(buf,"SHIFT+Cursor UP/Down - fork up/down");
-		yStart+=20;
-		GLDebugDrawString(xStart,yStart,buf);
-
-		if (m_useDefaultCamera)
-		{
-			sprintf(buf,"F5 - camera mode (free)");
-		} else
-		{
-			sprintf(buf,"F5 - camera mode (follow)");
-		}
-		yStart+=20;
-		GLDebugDrawString(xStart,yStart,buf);
-
-		yStart+=20;
-		if (m_dynamicsWorld->getConstraintSolver()->getSolverType()==BT_MLCP_SOLVER)
-		{
-			sprintf(buf,"F6 - solver (direct MLCP)");
-		} else
-		{
-			sprintf(buf,"F6 - solver (sequential impulse)");
-		}
-		GLDebugDrawString(xStart,yStart,buf);
-		btDiscreteDynamicsWorld* world = (btDiscreteDynamicsWorld*) m_dynamicsWorld;
-		if (world->getLatencyMotionStateInterpolation())
-		{
-			sprintf(buf,"F7 - motionstate interpolation (on)");
-		} else
-		{
-			sprintf(buf,"F7 - motionstate interpolation (off)");
-		}
-		yStart+=20;
-		GLDebugDrawString(xStart,yStart,buf);
-
-		sprintf(buf,"Click window for keyboard focus");
-		yStart+=20;
-		GLDebugDrawString(xStart,yStart,buf);
-
-
-		resetPerspectiveProjection();
-		glEnable(GL_LIGHTING);
-	}
-#endif
 }
 
 void ForkLiftDemo::stepSimulation(float deltaTime)
 {
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     {
         int wheelIndex = 2;
         m_vehicle->applyEngineForce(gEngineForce, wheelIndex);
@@ -832,16 +629,11 @@ void ForkLiftDemo::stepSimulation(float deltaTime)
 
 void ForkLiftDemo::displayCallback(void)
 {
-    //	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    //renderme();
-
     //optional but useful: debug drawing
     if (m_dynamicsWorld)
+    {
         m_dynamicsWorld->debugDrawWorld();
-
-    //	glFlush();
-    //	glutSwapBuffers();
+    }
 }
 
 void ForkLiftDemo::clientResetScene()
@@ -885,7 +677,6 @@ void ForkLiftDemo::resetForklift()
     m_forkBody->setLinearVelocity(btVector3(0, 0, 0));
     m_forkBody->setAngularVelocity(btVector3(0, 0, 0));
 
-    //	m_liftHinge->setLimit(-LIFT_EPS, LIFT_EPS);
     m_liftHinge->setLimit(0.0f, 0.0f);
     m_liftHinge->enableAngularMotor(false, 0, 0);
 
@@ -1016,8 +807,6 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
 
                     m_dynamicsWorld->setConstraintSolver(m_constraintSolver);
 
-                    //exitPhysics();
-                    //initPhysics();
                     break;
                 }
 
@@ -1065,145 +854,6 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
     return handled;
 }
 
-void ForkLiftDemo::specialKeyboardUp(int key, int x, int y)
-{
-#if 0
-
-#endif
-}
-
-void ForkLiftDemo::specialKeyboard(int key, int x, int y)
-{
-#if 0
-    if (key==GLUT_KEY_END)
-		return;
-
-	//	printf("key = %i x=%i y=%i\n",key,x,y);
-
-	int state;
-	state=glutGetModifiers();
-	if (state & GLUT_ACTIVE_SHIFT)
-	{
-		switch (key)
-			{
-			case GLUT_KEY_LEFT :
-				{
-
-					m_liftHinge->setLimit(-M_PI/16.0f, M_PI/8.0f);
-					m_liftHinge->enableAngularMotor(true, -0.1, maxMotorImpulse);
-					break;
-				}
-			case GLUT_KEY_RIGHT :
-				{
-
-					m_liftHinge->setLimit(-M_PI/16.0f, M_PI/8.0f);
-					m_liftHinge->enableAngularMotor(true, 0.1, maxMotorImpulse);
-					break;
-				}
-			case GLUT_KEY_UP :
-				{
-					m_forkSlider->setLowerLinLimit(0.1f);
-					m_forkSlider->setUpperLinLimit(3.9f);
-					m_forkSlider->setPoweredLinMotor(true);
-					m_forkSlider->setMaxLinMotorForce(maxMotorImpulse);
-					m_forkSlider->setTargetLinMotorVelocity(1.0);
-					break;
-				}
-			case GLUT_KEY_DOWN :
-				{
-					m_forkSlider->setLowerLinLimit(0.1f);
-					m_forkSlider->setUpperLinLimit(3.9f);
-					m_forkSlider->setPoweredLinMotor(true);
-					m_forkSlider->setMaxLinMotorForce(maxMotorImpulse);
-					m_forkSlider->setTargetLinMotorVelocity(-1.0);
-					break;
-				}
-
-			default:
-				DemoApplication::specialKeyboard(key,x,y);
-				break;
-			}
-
-	} else
-	{
-			switch (key)
-			{
-			case GLUT_KEY_LEFT :
-				{
-					gVehicleSteering += steeringIncrement;
-					if (	gVehicleSteering > steeringClamp)
-						gVehicleSteering = steeringClamp;
-
-					break;
-				}
-			case GLUT_KEY_RIGHT :
-				{
-					gVehicleSteering -= steeringIncrement;
-					if (	gVehicleSteering < -steeringClamp)
-						gVehicleSteering = -steeringClamp;
-
-					break;
-				}
-			case GLUT_KEY_UP :
-				{
-					gEngineForce = maxEngineForce;
-					gBreakingForce = 0.f;
-					break;
-				}
-			case GLUT_KEY_DOWN :
-				{
-					gEngineForce = -maxEngineForce;
-					gBreakingForce = 0.f;
-					break;
-				}
-
-			case GLUT_KEY_F7:
-				{
-					btDiscreteDynamicsWorld* world = (btDiscreteDynamicsWorld*)m_dynamicsWorld;
-					world->setLatencyMotionStateInterpolation(!world->getLatencyMotionStateInterpolation());
-					printf("world latencyMotionStateInterpolation = %d\n", world->getLatencyMotionStateInterpolation());
-					break;
-				}
-			case GLUT_KEY_F6:
-				{
-					//switch solver (needs demo restart)
-					useMCLPSolver = !useMCLPSolver;
-					printf("switching to useMLCPSolver = %d\n", useMCLPSolver);
-
-					delete m_constraintSolver;
-					if (useMCLPSolver)
-					{
-						btDantzigSolver* mlcp = new btDantzigSolver();
-						//btSolveProjectedGaussSeidel* mlcp = new btSolveProjectedGaussSeidel;
-						btMLCPSolver* sol = new btMLCPSolver(mlcp);
-						m_constraintSolver = sol;
-					} else
-					{
-						m_constraintSolver = new btSequentialImpulseConstraintSolver();
-					}
-
-					m_dynamicsWorld->setConstraintSolver(m_constraintSolver);
-
-
-					//exitPhysics();
-					//initPhysics();
-					break;
-				}
-
-			case GLUT_KEY_F5:
-				m_useDefaultCamera = !m_useDefaultCamera;
-				break;
-			default:
-				DemoApplication::specialKeyboard(key,x,y);
-				break;
-			}
-
-	}
-	//	glutPostRedisplay();
-
-#endif
-}
-
 void ForkLiftDemo::lockLiftHinge(void)
 {
     btScalar hingeAngle = m_liftHinge->getHingeAngle();
@@ -1212,21 +862,18 @@ void ForkLiftDemo::lockLiftHinge(void)
     m_liftHinge->enableAngularMotor(false, 0, 0);
     if (hingeAngle < lowLim)
     {
-        //		m_liftHinge->setLimit(lowLim, lowLim + LIFT_EPS);
         m_liftHinge->setLimit(lowLim, lowLim);
     }
     else if (hingeAngle > hiLim)
     {
-        //		m_liftHinge->setLimit(hiLim - LIFT_EPS, hiLim);
         m_liftHinge->setLimit(hiLim, hiLim);
     }
     else
     {
-        //		m_liftHinge->setLimit(hingeAngle - LIFT_EPS, hingeAngle + LIFT_EPS);
         m_liftHinge->setLimit(hingeAngle, hingeAngle);
     }
     return;
-}  // ForkLiftDemo::lockLiftHinge()
+}
 
 void ForkLiftDemo::lockForkSlider(void)
 {
@@ -1250,7 +897,7 @@ void ForkLiftDemo::lockForkSlider(void)
         m_forkSlider->setUpperLinLimit(linDepth);
     }
     return;
-}  // ForkLiftDemo::lockForkSlider()
+}
 
 btRigidBody* ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform& startTransform, btCollisionShape* shape)
 {
@@ -1264,20 +911,11 @@ btRigidBody* ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform
         shape->calculateLocalInertia(mass, localInertia);
 
     //using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-
-#define USE_MOTIONSTATE 1
-#ifdef USE_MOTIONSTATE
     btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
 
     btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
 
     btRigidBody* body = new btRigidBody(cInfo);
-    //body->setContactProcessingThreshold(m_defaultContactProcessingThreshold);
-
-#else
-    btRigidBody* body = new btRigidBody(mass, 0, shape, localInertia);
-	body->setWorldTransform(startTransform);
-#endif  //
 
     m_dynamicsWorld->addRigidBody(body);
     return body;
@@ -1289,5 +927,3 @@ CommonExampleInterface* ForkLiftCreateFunc(struct CommonExampleOptions& options)
 }
 
 B3_STANDALONE_EXAMPLE(ForkLiftCreateFunc)
-
-#endif
