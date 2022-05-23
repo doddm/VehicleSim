@@ -32,7 +32,6 @@ class btCollisionShape;
 #include <iostream>
 #include "BulletDynamics/Vehicle/btRaycastVehicle.h"
 #include "BulletDynamics/ConstraintSolver/btHingeConstraint.h"
-#include "BulletDynamics/ConstraintSolver/btSliderConstraint.h"
 
 #include "../CommonExampleInterface.h"
 #include "LinearMath/btAlignedObjectArray.h"
@@ -60,23 +59,7 @@ public:
 
     int m_wheelInstances[4];
 
-    //----------------------------
-    btRigidBody* m_liftBody;
-    btVector3 m_liftStartPos;
-    btHingeConstraint* m_liftHinge;
-
-    btRigidBody* m_forkBody;
-    btVector3 m_forkStartPos;
-    btSliderConstraint* m_forkSlider;
-
-    btRigidBody* m_loadBody;
-    btVector3 m_loadStartPos;
-
-    void lockLiftHinge(void);
-    void lockForkSlider(void);
-
     bool m_useDefaultCamera;
-    //----------------------------
 
     btAlignedObjectArray<btCollisionShape*> m_collisionShapes;
 
@@ -108,7 +91,7 @@ public:
 
     virtual void stepSimulation(float deltaTime);
 
-    virtual void resetForklift();
+    virtual void resetVehicle();
 
     virtual void clientResetScene();
 
@@ -141,15 +124,6 @@ public:
         float targetPos[3] = {-0.33, -0.72, 4.5};
         m_guiHelper->resetCamera(dist, yaw, pitch, targetPos[0], targetPos[1], targetPos[2]);
     }
-
-    /*static DemoApplication* Create()
-    {
-        ForkLiftDemo* demo = new ForkLiftDemo();
-        demo->myinit();
-        demo->initPhysics();
-        return demo;
-    }
-    */
 };
 
 btScalar maxMotorImpulse = 4000.f;
@@ -185,19 +159,27 @@ bool useMCLPSolver = true;
 ///btRaycastVehicle is the interface for the constraint that implements the raycast vehicle
 ///notice that for higher-quality slow-moving vehicles, another approach might be better
 ///implementing explicit hinged-wheel constraints with cylinder collision, rather then raycasts
+
+// vehicle body dimensions [m]
+float bodyWidth = 1.9f;
+float bodyHeight = 1.0f;
+float bodyLength = 3.5f;
+
 float gEngineForce = 0.f;
 
 float defaultBreakingForce = 10.f;
 float gBreakingForce = 100.f;
 
 float maxEngineForce = 1000.f;  //this should be engine/velocity dependent
-float maxBreakingForce = 100.f;
 
 float gVehicleSteering = 0.f;
 float steeringIncrement = 0.04f;
 float steeringClamp = 0.3f;
-float wheelRadius = 0.5f;
-float wheelWidth = 0.4f;
+float wheelHeight = 0.8f;
+float wheelRadius = 0.35f;
+float wheelWidth = 0.3f;
+float wheelBaseFront = 2.1f;
+float wheelBaseRear = wheelBaseFront;
 float wheelFriction = 1000;  //BT_LARGE_FLOAT;
 float suspensionStiffness = 20.f;
 float suspensionDamping = 2.3f;
@@ -206,16 +188,11 @@ float rollInfluence = 0.1f;  //1.0f;
 
 btScalar suspensionRestLength(0.6);
 
-#define CUBE_HALF_EXTENTS 1
-
 ////////////////////////////////////
 
 ForkLiftDemo::ForkLiftDemo(struct GUIHelperInterface* helper)
         : m_guiHelper(helper),
           m_carChassis(0),
-          m_liftBody(0),
-          m_forkBody(0),
-          m_loadBody(0),
           m_indexVertexArrays(0),
           m_vertices(0),
           m_cameraHeight(4.f),
@@ -346,12 +323,14 @@ void ForkLiftDemo::initPhysics()
     tr.setIdentity();
     tr.setOrigin(btVector3(0, -3, 0));
 
-    //either use heightfield or triangle mesh
-
     //create ground object
     localCreateRigidBody(0, tr, groundShape);
 
-    btCollisionShape* chassisShape = new btBoxShape(btVector3(1.f, 0.5f, 2.f));
+    // Chassis coordinate system
+    // +x - left
+    // +y - up
+    // +z - forward
+    btCollisionShape* chassisShape = new btBoxShape(btVector3(0.5f * bodyWidth, 0.5f * bodyHeight, 0.5f * bodyLength));
     m_collisionShapes.push_back(chassisShape);
 
     btCompoundShape* compound = new btCompoundShape();
@@ -359,118 +338,30 @@ void ForkLiftDemo::initPhysics()
     btTransform localTrans;
     localTrans.setIdentity();
     //localTrans effectively shifts the center of mass with respect to the chassis
-    localTrans.setOrigin(btVector3(0, 1, 0));
+    localTrans.setOrigin(btVector3(0, bodyHeight, 0));
 
     compound->addChildShape(localTrans, chassisShape);
 
-    {
-        btCollisionShape* suppShape = new btBoxShape(btVector3(0.5f, 0.1f, 0.5f));
-        btTransform suppLocalTrans;
-        suppLocalTrans.setIdentity();
-        //localTrans effectively shifts the center of mass with respect to the chassis
-        suppLocalTrans.setOrigin(btVector3(0, 1.0, 2.5));
-        compound->addChildShape(suppLocalTrans, suppShape);
-    }
-
     tr.setOrigin(btVector3(0, 0.f, 0));
 
-    m_carChassis = localCreateRigidBody(800, tr, compound);  //chassisShape);
+    // vehicle mass [kg]
+    float vehicleMass = 700.0f;
+    m_carChassis = localCreateRigidBody(vehicleMass, tr, compound);  //chassisShape);
 
-    m_wheelShape = new btCylinderShapeX(btVector3(wheelWidth, wheelRadius, wheelRadius));
+//    m_wheelShape = new btCylinderShapeX(btVector3(0.5f*wheelWidth, wheelRadius, wheelRadius));
+    m_wheelShape = new btBoxShape(btVector3(0.5f*wheelWidth, wheelRadius, wheelRadius));
 
     m_guiHelper->createCollisionShapeGraphicsObject(m_wheelShape);
     int wheelGraphicsIndex = m_wheelShape->getUserIndex();
 
     const float position[4] = {0, 10, 10, 0};
     const float quaternion[4] = {0, 0, 0, 1};
-    const float color[4] = {0, 1, 0, 1};
+    const float color[4] = {0.2, 0.2, 0.2, 1};
     const float scaling[4] = {1, 1, 1, 1};
 
     for (int i = 0; i < 4; i++)
     {
         m_wheelInstances[i] = m_guiHelper->registerGraphicsInstance(wheelGraphicsIndex, position, quaternion, color, scaling);
-    }
-
-    {
-        btCollisionShape* liftShape = new btBoxShape(btVector3(0.5f, 2.0f, 0.05f));
-        m_collisionShapes.push_back(liftShape);
-        btTransform liftTrans;
-        m_liftStartPos = btVector3(0.0f, 2.5f, 3.05f);
-        liftTrans.setIdentity();
-        liftTrans.setOrigin(m_liftStartPos);
-        m_liftBody = localCreateRigidBody(10, liftTrans, liftShape);
-
-        btTransform localA, localB;
-        localA.setIdentity();
-        localB.setIdentity();
-        localA.getBasis().setEulerZYX(0, M_PI_2, 0);
-        localA.setOrigin(btVector3(0.0, 1.0, 3.05));
-        localB.getBasis().setEulerZYX(0, M_PI_2, 0);
-        localB.setOrigin(btVector3(0.0, -1.5, -0.05));
-        m_liftHinge = new btHingeConstraint(*m_carChassis, *m_liftBody, localA, localB);
-        m_liftHinge->setLimit(0.0f, 0.0f);
-        m_dynamicsWorld->addConstraint(m_liftHinge, true);
-
-        btCollisionShape* forkShapeA = new btBoxShape(btVector3(1.0f, 0.1f, 0.1f));
-        m_collisionShapes.push_back(forkShapeA);
-        btCompoundShape* forkCompound = new btCompoundShape();
-        m_collisionShapes.push_back(forkCompound);
-        btTransform forkLocalTrans;
-        forkLocalTrans.setIdentity();
-        forkCompound->addChildShape(forkLocalTrans, forkShapeA);
-
-        btCollisionShape* forkShapeB = new btBoxShape(btVector3(0.1f, 0.02f, 0.6f));
-        m_collisionShapes.push_back(forkShapeB);
-        forkLocalTrans.setIdentity();
-        forkLocalTrans.setOrigin(btVector3(-0.9f, -0.08f, 0.7f));
-        forkCompound->addChildShape(forkLocalTrans, forkShapeB);
-
-        btCollisionShape* forkShapeC = new btBoxShape(btVector3(0.1f, 0.02f, 0.6f));
-        m_collisionShapes.push_back(forkShapeC);
-        forkLocalTrans.setIdentity();
-        forkLocalTrans.setOrigin(btVector3(0.9f, -0.08f, 0.7f));
-        forkCompound->addChildShape(forkLocalTrans, forkShapeC);
-
-        btTransform forkTrans;
-        m_forkStartPos = btVector3(0.0f, 0.6f, 3.2f);
-        forkTrans.setIdentity();
-        forkTrans.setOrigin(m_forkStartPos);
-        m_forkBody = localCreateRigidBody(5, forkTrans, forkCompound);
-
-        localA.setIdentity();
-        localB.setIdentity();
-        localA.getBasis().setEulerZYX(0, 0, M_PI_2);
-        localA.setOrigin(btVector3(0.0f, -1.9f, 0.05f));
-        localB.getBasis().setEulerZYX(0, 0, M_PI_2);
-        localB.setOrigin(btVector3(0.0, 0.0, -0.1));
-        m_forkSlider = new btSliderConstraint(*m_liftBody, *m_forkBody, localA, localB, true);
-        m_forkSlider->setLowerLinLimit(0.1f);
-        m_forkSlider->setUpperLinLimit(0.1f);
-        m_forkSlider->setLowerAngLimit(0.0f);
-        m_forkSlider->setUpperAngLimit(0.0f);
-        m_dynamicsWorld->addConstraint(m_forkSlider, true);
-
-        btCompoundShape* loadCompound = new btCompoundShape();
-        m_collisionShapes.push_back(loadCompound);
-        btCollisionShape* loadShapeA = new btBoxShape(btVector3(2.0f, 0.5f, 0.5f));
-        m_collisionShapes.push_back(loadShapeA);
-        btTransform loadTrans;
-        loadTrans.setIdentity();
-        loadCompound->addChildShape(loadTrans, loadShapeA);
-        btCollisionShape* loadShapeB = new btBoxShape(btVector3(0.1f, 1.0f, 1.0f));
-        m_collisionShapes.push_back(loadShapeB);
-        loadTrans.setIdentity();
-        loadTrans.setOrigin(btVector3(2.1f, 0.0f, 0.0f));
-        loadCompound->addChildShape(loadTrans, loadShapeB);
-        btCollisionShape* loadShapeC = new btBoxShape(btVector3(0.1f, 1.0f, 1.0f));
-        m_collisionShapes.push_back(loadShapeC);
-        loadTrans.setIdentity();
-        loadTrans.setOrigin(btVector3(-2.1f, 0.0f, 0.0f));
-        loadCompound->addChildShape(loadTrans, loadShapeC);
-        loadTrans.setIdentity();
-        m_loadStartPos = btVector3(0.0f, 3.5f, 7.0f);
-        loadTrans.setOrigin(m_loadStartPos);
-        m_loadBody = localCreateRigidBody(loadMass, loadTrans, loadCompound);
     }
 
     /// create vehicle
@@ -483,24 +374,36 @@ void ForkLiftDemo::initPhysics()
 
         m_dynamicsWorld->addVehicle(m_vehicle);
 
-        float connectionHeight = 1.2f;
-
         bool isFrontWheel = true;
 
         //choose coordinate system
         m_vehicle->setCoordinateSystem(rightIndex, upIndex, forwardIndex);
 
-        btVector3 connectionPointCS0(CUBE_HALF_EXTENTS - (0.3 * wheelWidth), connectionHeight, 2 * CUBE_HALF_EXTENTS - wheelRadius);
+        const float halfBodyLength = bodyLength * 0.5f;
 
-        m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, m_tuning, isFrontWheel);
-        connectionPointCS0 = btVector3(-CUBE_HALF_EXTENTS + (0.3 * wheelWidth), connectionHeight, 2 * CUBE_HALF_EXTENTS - wheelRadius);
+        // left front
+        btVector3 connectionPointCS0(0.5f * wheelBaseFront, wheelHeight, halfBodyLength - wheelRadius);
 
-        m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, m_tuning, isFrontWheel);
-        connectionPointCS0 = btVector3(-CUBE_HALF_EXTENTS + (0.3 * wheelWidth), connectionHeight, -2 * CUBE_HALF_EXTENTS + wheelRadius);
+        m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
+                            m_tuning, isFrontWheel);
+
+        // right front
+        connectionPointCS0 = btVector3(-0.5f * wheelBaseFront, wheelHeight, halfBodyLength - wheelRadius);
+
+        m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
+                            m_tuning, isFrontWheel);
+
+        // right rear
+        connectionPointCS0 = btVector3(-0.5f * wheelBaseRear, wheelHeight,
+                                       -halfBodyLength + wheelRadius);
         isFrontWheel = false;
-        m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, m_tuning, isFrontWheel);
-        connectionPointCS0 = btVector3(CUBE_HALF_EXTENTS - (0.3 * wheelWidth), connectionHeight, -2 * CUBE_HALF_EXTENTS + wheelRadius);
-        m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, m_tuning, isFrontWheel);
+        m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
+                            m_tuning, isFrontWheel);
+
+        // left rear
+        connectionPointCS0 = btVector3(0.5f * wheelBaseRear, wheelHeight, -halfBodyLength + wheelRadius);
+        m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
+                            m_tuning, isFrontWheel);
 
         for (int i = 0; i < m_vehicle->getNumWheels(); i++)
         {
@@ -513,7 +416,7 @@ void ForkLiftDemo::initPhysics()
         }
     }
 
-    resetForklift();
+    resetVehicle();
 
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
@@ -552,8 +455,6 @@ void ForkLiftDemo::renderScene()
     ATTRIBUTE_ALIGNED16(btScalar)
             m[16];
     int i;
-
-    btVector3 wheelColor(1, 0, 0);
 
     btVector3 worldBoundsMin, worldBoundsMax;
     getDynamicsWorld()->getBroadphase()->getBroadphaseAabb(worldBoundsMin, worldBoundsMax);
@@ -642,7 +543,7 @@ void ForkLiftDemo::clientResetScene()
     initPhysics();
 }
 
-void ForkLiftDemo::resetForklift()
+void ForkLiftDemo::resetVehicle()
 {
     gVehicleSteering = 0.f;
     gBreakingForce = defaultBreakingForce;
@@ -661,36 +562,6 @@ void ForkLiftDemo::resetForklift()
             m_vehicle->updateWheelTransform(i, true);
         }
     }
-    btTransform liftTrans;
-    liftTrans.setIdentity();
-    liftTrans.setOrigin(m_liftStartPos);
-    m_liftBody->activate();
-    m_liftBody->setCenterOfMassTransform(liftTrans);
-    m_liftBody->setLinearVelocity(btVector3(0, 0, 0));
-    m_liftBody->setAngularVelocity(btVector3(0, 0, 0));
-
-    btTransform forkTrans;
-    forkTrans.setIdentity();
-    forkTrans.setOrigin(m_forkStartPos);
-    m_forkBody->activate();
-    m_forkBody->setCenterOfMassTransform(forkTrans);
-    m_forkBody->setLinearVelocity(btVector3(0, 0, 0));
-    m_forkBody->setAngularVelocity(btVector3(0, 0, 0));
-
-    m_liftHinge->setLimit(0.0f, 0.0f);
-    m_liftHinge->enableAngularMotor(false, 0, 0);
-
-    m_forkSlider->setLowerLinLimit(0.1f);
-    m_forkSlider->setUpperLinLimit(0.1f);
-    m_forkSlider->setPoweredLinMotor(false);
-
-    btTransform loadTrans;
-    loadTrans.setIdentity();
-    loadTrans.setOrigin(m_loadStartPos);
-    m_loadBody->activate();
-    m_loadBody->setCenterOfMassTransform(loadTrans);
-    m_loadBody->setLinearVelocity(btVector3(0, 0, 0));
-    m_loadBody->setAngularVelocity(btVector3(0, 0, 0));
 }
 
 bool ForkLiftDemo::keyboardCallback(int key, int state)
@@ -704,40 +575,6 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
         {
             switch (key)
             {
-                case B3G_LEFT_ARROW:
-                {
-                    m_liftHinge->setLimit(-M_PI / 16.0f, M_PI / 8.0f);
-                    m_liftHinge->enableAngularMotor(true, -0.1, maxMotorImpulse);
-                    handled = true;
-                    break;
-                }
-                case B3G_RIGHT_ARROW:
-                {
-                    m_liftHinge->setLimit(-M_PI / 16.0f, M_PI / 8.0f);
-                    m_liftHinge->enableAngularMotor(true, 0.1, maxMotorImpulse);
-                    handled = true;
-                    break;
-                }
-                case B3G_UP_ARROW:
-                {
-                    m_forkSlider->setLowerLinLimit(0.1f);
-                    m_forkSlider->setUpperLinLimit(3.9f);
-                    m_forkSlider->setPoweredLinMotor(true);
-                    m_forkSlider->setMaxLinMotorForce(maxMotorImpulse);
-                    m_forkSlider->setTargetLinMotorVelocity(1.0);
-                    handled = true;
-                    break;
-                }
-                case B3G_DOWN_ARROW:
-                {
-                    m_forkSlider->setLowerLinLimit(0.1f);
-                    m_forkSlider->setUpperLinLimit(3.9f);
-                    m_forkSlider->setPoweredLinMotor(true);
-                    m_forkSlider->setMaxLinMotorForce(maxMotorImpulse);
-                    m_forkSlider->setTargetLinMotorVelocity(-1.0);
-                    handled = true;
-                    break;
-                }
             }
         }
         else
@@ -825,7 +662,6 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
         {
             case B3G_UP_ARROW:
             {
-                lockForkSlider();
                 gEngineForce = 0.f;
                 gBreakingForce = defaultBreakingForce;
                 handled = true;
@@ -833,7 +669,6 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
             }
             case B3G_DOWN_ARROW:
             {
-                lockForkSlider();
                 gEngineForce = 0.f;
                 gBreakingForce = defaultBreakingForce;
                 handled = true;
@@ -842,7 +677,6 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
             case B3G_LEFT_ARROW:
             case B3G_RIGHT_ARROW:
             {
-                lockLiftHinge();
                 handled = true;
                 break;
             }
@@ -852,51 +686,6 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
         }
     }
     return handled;
-}
-
-void ForkLiftDemo::lockLiftHinge(void)
-{
-    btScalar hingeAngle = m_liftHinge->getHingeAngle();
-    btScalar lowLim = m_liftHinge->getLowerLimit();
-    btScalar hiLim = m_liftHinge->getUpperLimit();
-    m_liftHinge->enableAngularMotor(false, 0, 0);
-    if (hingeAngle < lowLim)
-    {
-        m_liftHinge->setLimit(lowLim, lowLim);
-    }
-    else if (hingeAngle > hiLim)
-    {
-        m_liftHinge->setLimit(hiLim, hiLim);
-    }
-    else
-    {
-        m_liftHinge->setLimit(hingeAngle, hingeAngle);
-    }
-    return;
-}
-
-void ForkLiftDemo::lockForkSlider(void)
-{
-    btScalar linDepth = m_forkSlider->getLinearPos();
-    btScalar lowLim = m_forkSlider->getLowerLinLimit();
-    btScalar hiLim = m_forkSlider->getUpperLinLimit();
-    m_forkSlider->setPoweredLinMotor(false);
-    if (linDepth <= lowLim)
-    {
-        m_forkSlider->setLowerLinLimit(lowLim);
-        m_forkSlider->setUpperLinLimit(lowLim);
-    }
-    else if (linDepth > hiLim)
-    {
-        m_forkSlider->setLowerLinLimit(hiLim);
-        m_forkSlider->setUpperLinLimit(hiLim);
-    }
-    else
-    {
-        m_forkSlider->setLowerLinLimit(linDepth);
-        m_forkSlider->setUpperLinLimit(linDepth);
-    }
-    return;
 }
 
 btRigidBody* ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform& startTransform, btCollisionShape* shape)
