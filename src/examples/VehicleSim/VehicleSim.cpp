@@ -32,7 +32,9 @@ class btCollisionShape;
 #include <iostream>
 #include "BulletDynamics/Vehicle/btRaycastVehicle.h"
 #include "BulletDynamics/ConstraintSolver/btHingeConstraint.h"
+#include "../../physics/CommonRigidBodyBase.h"
 
+#include "../../../external/bullet/examples/Benchmarks/landscapeData.h"
 #include "../CommonExampleInterface.h"
 #include "LinearMath/btAlignedObjectArray.h"
 #include "btBulletCollisionCommon.h"
@@ -97,6 +99,8 @@ public:
 
     virtual void displayCallback();
 
+    virtual void createLargeMeshBody();
+
     virtual bool mouseMoveCallback(float x, float y)
     {
         return false;
@@ -112,6 +116,8 @@ public:
     virtual void renderScene();
 
     virtual void physicsDebugDraw(int debugFlags);
+
+    virtual void setCameraPosition(float x, float y, float z);
 
     void initPhysics();
     void exitPhysics();
@@ -162,7 +168,7 @@ bool useMCLPSolver = true;
 
 // vehicle body dimensions [m]
 float bodyWidth = 1.9f;
-float bodyHeight = 1.0f;
+float bodyHeight = 1.8f;
 float bodyLength = 3.5f;
 
 float gEngineForce = 0.f;
@@ -185,6 +191,9 @@ float suspensionStiffness = 20.f;
 float suspensionDamping = 2.3f;
 float suspensionCompression = 4.4f;
 float rollInfluence = 0.1f;  //1.0f;
+
+// whether to render the wheels as boxes instead of cylinders
+bool renderWheelsAsBoxes = false;
 
 btScalar suspensionRestLength(0.6);
 
@@ -279,16 +288,117 @@ ForkLiftDemo::~ForkLiftDemo()
     //exitPhysics();
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// LargeMesh
+
+int LandscapeVtxCount[] = {
+        Landscape01VtxCount,
+        Landscape02VtxCount,
+        Landscape03VtxCount,
+        Landscape04VtxCount,
+        Landscape05VtxCount,
+        Landscape06VtxCount,
+        Landscape07VtxCount,
+        Landscape08VtxCount,
+};
+
+int LandscapeIdxCount[] = {
+        Landscape01IdxCount,
+        Landscape02IdxCount,
+        Landscape03IdxCount,
+        Landscape04IdxCount,
+        Landscape05IdxCount,
+        Landscape06IdxCount,
+        Landscape07IdxCount,
+        Landscape08IdxCount,
+};
+
+btScalar* LandscapeVtx[] = {
+        Landscape01Vtx,
+        Landscape02Vtx,
+        Landscape03Vtx,
+        Landscape04Vtx,
+        Landscape05Vtx,
+        Landscape06Vtx,
+        Landscape07Vtx,
+        Landscape08Vtx,
+};
+
+btScalar* LandscapeNml[] = {
+        Landscape01Nml,
+        Landscape02Nml,
+        Landscape03Nml,
+        Landscape04Nml,
+        Landscape05Nml,
+        Landscape06Nml,
+        Landscape07Nml,
+        Landscape08Nml,
+};
+
+btScalar* LandscapeTex[] = {
+        Landscape01Tex,
+        Landscape02Tex,
+        Landscape03Tex,
+        Landscape04Tex,
+        Landscape05Tex,
+        Landscape06Tex,
+        Landscape07Tex,
+        Landscape08Tex,
+};
+
+unsigned short* LandscapeIdx[] = {
+        Landscape01Idx,
+        Landscape02Idx,
+        Landscape03Idx,
+        Landscape04Idx,
+        Landscape05Idx,
+        Landscape06Idx,
+        Landscape07Idx,
+        Landscape08Idx,
+};
+
+void ForkLiftDemo::createLargeMeshBody()
+{
+    btTransform trans;
+    trans.setIdentity();
+
+    for (int i = 0; i < 8; i++)
+    {
+        btTriangleIndexVertexArray* meshInterface = new btTriangleIndexVertexArray();
+        btIndexedMesh part;
+
+        part.m_vertexBase = (const unsigned char*)LandscapeVtx[i];
+        part.m_vertexStride = sizeof(btScalar) * 3;
+        part.m_numVertices = LandscapeVtxCount[i];
+        part.m_triangleIndexBase = (const unsigned char*)LandscapeIdx[i];
+        part.m_triangleIndexStride = sizeof(short) * 3;
+        part.m_numTriangles = LandscapeIdxCount[i] / 3;
+        part.m_indexType = PHY_SHORT;
+
+        meshInterface->addIndexedMesh(part, PHY_SHORT);
+
+        bool useQuantizedAabbCompression = true;
+        btBvhTriangleMeshShape* triMeshShape = new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression);
+        triMeshShape->setLocalScaling(btVector3(1.0, 0.2, 1.0));
+        btVector3 localInertia(0, 0, 0);
+        trans.setOrigin(btVector3(0, -10, 0));
+
+        btRigidBody* body = localCreateRigidBody(0, trans, triMeshShape);
+        body->setFriction(btScalar(0.9));
+    }
+}
+
 void ForkLiftDemo::initPhysics()
 {
     int upAxis = 1;
 
     m_guiHelper->setUpAxis(upAxis);
 
-    btVector3 groundExtents(50, 50, 50);
-    groundExtents[upAxis] = 3;
-    btCollisionShape* groundShape = new btBoxShape(groundExtents);
-    m_collisionShapes.push_back(groundShape);
+//    btVector3 groundExtents(50, 50, 50);
+//    groundExtents[upAxis] = 3;
+//    btCollisionShape* groundShape = new btBoxShape(groundExtents);
+//    m_collisionShapes.push_back(groundShape);
+
     m_collisionConfiguration = new btDefaultCollisionConfiguration();
     m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
     btVector3 worldMin(-1000, -1000, -1000);
@@ -324,7 +434,9 @@ void ForkLiftDemo::initPhysics()
     tr.setOrigin(btVector3(0, -3, 0));
 
     //create ground object
-    localCreateRigidBody(0, tr, groundShape);
+//    localCreateRigidBody(0, tr, groundShape);
+    createLargeMeshBody();
+
 
     // Chassis coordinate system
     // +x - left
@@ -348,8 +460,14 @@ void ForkLiftDemo::initPhysics()
     float vehicleMass = 700.0f;
     m_carChassis = localCreateRigidBody(vehicleMass, tr, compound);  //chassisShape);
 
-//    m_wheelShape = new btCylinderShapeX(btVector3(0.5f*wheelWidth, wheelRadius, wheelRadius));
-    m_wheelShape = new btBoxShape(btVector3(0.5f*wheelWidth, wheelRadius, wheelRadius));
+    if(renderWheelsAsBoxes)
+    {
+        m_wheelShape = new btBoxShape(btVector3(0.5f*wheelWidth, wheelRadius, wheelRadius));
+    }
+    else
+    {
+        m_wheelShape = new btCylinderShapeX(btVector3(0.5f*wheelWidth, wheelRadius, wheelRadius));
+    }
 
     m_guiHelper->createCollisionShapeGraphicsObject(m_wheelShape);
     int wheelGraphicsIndex = m_wheelShape->getUserIndex();
@@ -471,6 +589,8 @@ void ForkLiftDemo::renderScene()
 
 void ForkLiftDemo::stepSimulation(float deltaTime)
 {
+    btVector3 vehiclePosition = m_vehicle->getChassisWorldTransform().getOrigin();
+    setCameraPosition(vehiclePosition.x(), vehiclePosition.y(), vehiclePosition.z());
     {
         int wheelIndex = 2;
         m_vehicle->applyEngineForce(gEngineForce, wheelIndex);
@@ -585,6 +705,7 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
                 {
                     handled = true;
                     gVehicleSteering += steeringIncrement;
+                    gVehicleSteering = steeringClamp;
                     if (gVehicleSteering > steeringClamp)
                         gVehicleSteering = steeringClamp;
 
@@ -594,6 +715,7 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
                 {
                     handled = true;
                     gVehicleSteering -= steeringIncrement;
+                    gVehicleSteering = -steeringClamp;
                     if (gVehicleSteering < -steeringClamp)
                         gVehicleSteering = -steeringClamp;
 
@@ -677,6 +799,7 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
             case B3G_LEFT_ARROW:
             case B3G_RIGHT_ARROW:
             {
+                gVehicleSteering = 0.f;
                 handled = true;
                 break;
             }
@@ -708,6 +831,13 @@ btRigidBody* ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform
 
     m_dynamicsWorld->addRigidBody(body);
     return body;
+}
+
+void ForkLiftDemo::setCameraPosition(float x, float y, float z)
+{
+    CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
+    CommonCameraInterface* camera = renderer->getActiveCamera();
+    camera->setCameraTargetPosition(x, y, z);
 }
 
 CommonExampleInterface* ForkLiftCreateFunc(struct CommonExampleOptions& options)

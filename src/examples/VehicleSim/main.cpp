@@ -31,6 +31,7 @@ static bool gEnableDefaultMousePicking = true;
 bool renderGui = true;
 bool gDisableDemoSelection = false;
 bool visualWireframe = false;
+bool drawGrid = false;
 static bool renderVisualGeometry = true;
 static bool renderGrid = true;
 static bool gEnableRenderLoop = true;
@@ -257,7 +258,9 @@ int main(int argc, char* argv[])
 
 		btScalar dtSec = btScalar(clock.getTimeInSeconds());
 		if (dtSec > 0.1)
-			dtSec = 0.1;
+        {
+            dtSec = 0.1;
+        }
 
 		example->stepSimulation(dtSec);
 		clock.reset();
@@ -266,7 +269,10 @@ int main(int argc, char* argv[])
 
 		DrawGridData dg;
 		dg.upAxis = app->getUpAxis();
-		app->drawGrid(dg);
+        if(drawGrid)
+        {
+            app->drawGrid(dg);
+        }
 
 		app->swapBuffer();
 	} while (!app->m_window->requestedExit());
