@@ -20,11 +20,12 @@ SET(VehicleSim_SRCS
         main.cpp
         VehicleSim.cpp
         ../../graphics/OpenGLGuiHelper.cpp
+        ../../physics/Vehicle.cpp
         ${BULLET_PHYSICS_ROOT}/build3/bullet.rc
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/GL_ShapeDrawer.cpp
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/CollisionShape2TriangleMesh.cpp
         ${BULLET_PHYSICS_EXAMPLES}/Utils/b3Clock.cpp
-)
+        ../../physics/Tire.cpp ../../physics/Tire.h)
 
 #this define maps StandaloneExampleCreateFunc to the right 'CreateFunc'
 ADD_DEFINITIONS(-DB3_USE_STANDALONE_EXAMPLE)
