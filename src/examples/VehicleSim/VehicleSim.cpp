@@ -26,7 +26,9 @@ subject to the following restrictions:
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
 class btVehicleTuning;
+
 struct btVehicleRaycaster;
+
 class btCollisionShape;
 
 #include <iostream>
@@ -44,50 +46,52 @@ class btCollisionShape;
 #include "../../graphics/CommonGraphicsAppInterface.h"
 
 ///VehicleDemo shows how to setup and use the built-in raycast vehicle
-class ForkLiftDemo : public CommonExampleInterface
-{
+class ForkLiftDemo : public CommonExampleInterface {
 public:
-    GUIHelperInterface* m_guiHelper;
+    GUIHelperInterface *m_guiHelper;
 
     /* extra stuff*/
     btVector3 m_cameraPosition;
-    class btDiscreteDynamicsWorld* m_dynamicsWorld;
-    btDiscreteDynamicsWorld* getDynamicsWorld()
-    {
+
+    class btDiscreteDynamicsWorld *m_dynamicsWorld;
+
+    btDiscreteDynamicsWorld *getDynamicsWorld() {
         return m_dynamicsWorld;
     }
-    btRigidBody* m_carChassis;
-    btRigidBody* localCreateRigidBody(btScalar mass, const btTransform& worldTransform, btCollisionShape* colSape);
+
+    btRigidBody *m_carChassis;
+
+    btRigidBody *localCreateRigidBody(btScalar mass, const btTransform &worldTransform, btCollisionShape *colSape);
 
     int m_wheelInstances[4];
 
     bool m_useDefaultCamera;
 
-    btAlignedObjectArray<btCollisionShape*> m_collisionShapes;
+    btAlignedObjectArray<btCollisionShape *> m_collisionShapes;
 
-    class btBroadphaseInterface* m_overlappingPairCache;
+    class btBroadphaseInterface *m_overlappingPairCache;
 
-    class btCollisionDispatcher* m_dispatcher;
+    class btCollisionDispatcher *m_dispatcher;
 
-    class btConstraintSolver* m_constraintSolver;
+    class btConstraintSolver *m_constraintSolver;
 
-    class btDefaultCollisionConfiguration* m_collisionConfiguration;
+    class btDefaultCollisionConfiguration *m_collisionConfiguration;
 
-    class btTriangleIndexVertexArray* m_indexVertexArrays;
+    class btTriangleIndexVertexArray *m_indexVertexArrays;
 
-    btVector3* m_vertices;
+    btVector3 *m_vertices;
 
     btRaycastVehicle::btVehicleTuning m_tuning;
-    btVehicleRaycaster* m_vehicleRayCaster;
-    btRaycastVehicle* m_vehicle;
-    btCollisionShape* m_wheelShape;
+    btVehicleRaycaster *m_vehicleRayCaster;
+    btRaycastVehicle *m_vehicle;
+    btCollisionShape *m_wheelShape;
 
     float m_cameraHeight;
 
     float m_minCameraDistance;
     float m_maxCameraDistance;
 
-    ForkLiftDemo(struct GUIHelperInterface* helper);
+    ForkLiftDemo(struct GUIHelperInterface *helper);
 
     virtual ~ForkLiftDemo();
 
@@ -101,13 +105,11 @@ public:
 
     virtual void createLargeMeshBody();
 
-    virtual bool mouseMoveCallback(float x, float y)
-    {
+    virtual bool mouseMoveCallback(float x, float y) {
         return false;
     }
 
-    virtual bool mouseButtonCallback(int button, int state, float x, float y)
-    {
+    virtual bool mouseButtonCallback(int button, int state, float x, float y) {
         return false;
     }
 
@@ -120,10 +122,10 @@ public:
     virtual void setCameraPosition(float x, float y, float z);
 
     void initPhysics();
+
     void exitPhysics();
 
-    virtual void resetCamera()
-    {
+    virtual void resetCamera() {
         float dist = 8;
         float pitch = -32;
         float yaw = -45;
@@ -174,7 +176,8 @@ float bodyLength = 3.5f;
 float gEngineForce = 0.f;
 
 float defaultBreakingForce = 10.f;
-float gBreakingForce = 100.f;
+float maxBreakingForce = 100.f;
+float gBreakingForce = 0.f;
 
 float maxEngineForce = 1000.f;  //this should be engine/velocity dependent
 
@@ -195,19 +198,21 @@ float rollInfluence = 0.1f;  //1.0f;
 // whether to render the wheels as boxes instead of cylinders
 bool renderWheelsAsBoxes = false;
 
+btVector4 chassisColor{72. / 256., 133. / 256., 237. / 256., 1};
+btVector4 terrainColor{112. / 256., 129. / 256., 87. / 256., 1};
+
 btScalar suspensionRestLength(0.6);
 
 ////////////////////////////////////
 
-ForkLiftDemo::ForkLiftDemo(struct GUIHelperInterface* helper)
+ForkLiftDemo::ForkLiftDemo(struct GUIHelperInterface *helper)
         : m_guiHelper(helper),
           m_carChassis(0),
           m_indexVertexArrays(0),
           m_vertices(0),
           m_cameraHeight(4.f),
           m_minCameraDistance(3.f),
-          m_maxCameraDistance(10.f)
-{
+          m_maxCameraDistance(10.f) {
     helper->setUpAxis(1);
     m_vehicle = 0;
     m_wheelShape = 0;
@@ -215,38 +220,31 @@ ForkLiftDemo::ForkLiftDemo(struct GUIHelperInterface* helper)
     m_useDefaultCamera = false;
 }
 
-void ForkLiftDemo::exitPhysics()
-{
+void ForkLiftDemo::exitPhysics() {
     //cleanup in the reverse order of creation/initialization
 
     //remove the rigidbodies from the dynamics world and delete them
     int i;
-    for (i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
-    {
-        btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
-        btRigidBody* body = btRigidBody::upcast(obj);
-        if (body && body->getMotionState())
-        {
-            while (body->getNumConstraintRefs())
-            {
-                btTypedConstraint* constraint = body->getConstraintRef(0);
+    for (i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--) {
+        btCollisionObject *obj = m_dynamicsWorld->getCollisionObjectArray()[i];
+        btRigidBody *body = btRigidBody::upcast(obj);
+        if (body && body->getMotionState()) {
+            while (body->getNumConstraintRefs()) {
+                btTypedConstraint *constraint = body->getConstraintRef(0);
                 m_dynamicsWorld->removeConstraint(constraint);
                 delete constraint;
             }
             delete body->getMotionState();
             m_dynamicsWorld->removeRigidBody(body);
-        }
-        else
-        {
+        } else {
             m_dynamicsWorld->removeCollisionObject(obj);
         }
         delete obj;
     }
 
     //delete collision shapes
-    for (int j = 0; j < m_collisionShapes.size(); j++)
-    {
-        btCollisionShape* shape = m_collisionShapes[j];
+    for (int j = 0; j < m_collisionShapes.size(); j++) {
+        btCollisionShape *shape = m_collisionShapes[j];
         delete shape;
     }
     m_collisionShapes.clear();
@@ -283,8 +281,7 @@ void ForkLiftDemo::exitPhysics()
     m_collisionConfiguration = 0;
 }
 
-ForkLiftDemo::~ForkLiftDemo()
-{
+ForkLiftDemo::~ForkLiftDemo() {
     //exitPhysics();
 }
 
@@ -313,7 +310,7 @@ int LandscapeIdxCount[] = {
         Landscape08IdxCount,
 };
 
-btScalar* LandscapeVtx[] = {
+btScalar *LandscapeVtx[] = {
         Landscape01Vtx,
         Landscape02Vtx,
         Landscape03Vtx,
@@ -324,7 +321,7 @@ btScalar* LandscapeVtx[] = {
         Landscape08Vtx,
 };
 
-btScalar* LandscapeNml[] = {
+btScalar *LandscapeNml[] = {
         Landscape01Nml,
         Landscape02Nml,
         Landscape03Nml,
@@ -335,7 +332,7 @@ btScalar* LandscapeNml[] = {
         Landscape08Nml,
 };
 
-btScalar* LandscapeTex[] = {
+btScalar *LandscapeTex[] = {
         Landscape01Tex,
         Landscape02Tex,
         Landscape03Tex,
@@ -346,7 +343,7 @@ btScalar* LandscapeTex[] = {
         Landscape08Tex,
 };
 
-unsigned short* LandscapeIdx[] = {
+unsigned short *LandscapeIdx[] = {
         Landscape01Idx,
         Landscape02Idx,
         Landscape03Idx,
@@ -357,20 +354,18 @@ unsigned short* LandscapeIdx[] = {
         Landscape08Idx,
 };
 
-void ForkLiftDemo::createLargeMeshBody()
-{
+void ForkLiftDemo::createLargeMeshBody() {
     btTransform trans;
     trans.setIdentity();
 
-    for (int i = 0; i < 8; i++)
-    {
-        btTriangleIndexVertexArray* meshInterface = new btTriangleIndexVertexArray();
+    for (int i = 0; i < 8; i++) {
+        btTriangleIndexVertexArray *meshInterface = new btTriangleIndexVertexArray();
         btIndexedMesh part;
 
-        part.m_vertexBase = (const unsigned char*)LandscapeVtx[i];
+        part.m_vertexBase = (const unsigned char *) LandscapeVtx[i];
         part.m_vertexStride = sizeof(btScalar) * 3;
         part.m_numVertices = LandscapeVtxCount[i];
-        part.m_triangleIndexBase = (const unsigned char*)LandscapeIdx[i];
+        part.m_triangleIndexBase = (const unsigned char *) LandscapeIdx[i];
         part.m_triangleIndexStride = sizeof(short) * 3;
         part.m_numTriangles = LandscapeIdxCount[i] / 3;
         part.m_indexType = PHY_SHORT;
@@ -378,18 +373,20 @@ void ForkLiftDemo::createLargeMeshBody()
         meshInterface->addIndexedMesh(part, PHY_SHORT);
 
         bool useQuantizedAabbCompression = true;
-        btBvhTriangleMeshShape* triMeshShape = new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression);
+        btBvhTriangleMeshShape *triMeshShape = new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression);
         triMeshShape->setLocalScaling(btVector3(1.0, 0.2, 1.0));
         btVector3 localInertia(0, 0, 0);
         trans.setOrigin(btVector3(0, -10, 0));
 
-        btRigidBody* body = localCreateRigidBody(0, trans, triMeshShape);
+        btRigidBody *body = localCreateRigidBody(0, trans, triMeshShape);
         body->setFriction(btScalar(0.9));
+
+        m_guiHelper->createCollisionShapeGraphicsObject(body->getCollisionShape());
+        m_guiHelper->createCollisionObjectGraphicsObject(body, terrainColor);
     }
 }
 
-void ForkLiftDemo::initPhysics()
-{
+void ForkLiftDemo::initPhysics() {
     int upAxis = 1;
 
     m_guiHelper->setUpAxis(upAxis);
@@ -404,24 +401,19 @@ void ForkLiftDemo::initPhysics()
     btVector3 worldMin(-1000, -1000, -1000);
     btVector3 worldMax(1000, 1000, 1000);
     m_overlappingPairCache = new btAxisSweep3(worldMin, worldMax);
-    if (useMCLPSolver)
-    {
-        btDantzigSolver* mlcp = new btDantzigSolver();
+    if (useMCLPSolver) {
+        btDantzigSolver *mlcp = new btDantzigSolver();
         //btSolveProjectedGaussSeidel* mlcp = new btSolveProjectedGaussSeidel;
-        btMLCPSolver* sol = new btMLCPSolver(mlcp);
+        btMLCPSolver *sol = new btMLCPSolver(mlcp);
         m_constraintSolver = sol;
-    }
-    else
-    {
+    } else {
         m_constraintSolver = new btSequentialImpulseConstraintSolver();
     }
-    m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_constraintSolver, m_collisionConfiguration);
-    if (useMCLPSolver)
-    {
+    m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_constraintSolver,
+                                                  m_collisionConfiguration);
+    if (useMCLPSolver) {
         m_dynamicsWorld->getSolverInfo().m_minimumSolverBatchSize = 1;  //for direct solver it is better to have a small A matrix
-    }
-    else
-    {
+    } else {
         m_dynamicsWorld->getSolverInfo().m_minimumSolverBatchSize = 128;  //for direct solver, it is better to solve multiple objects together, small batches have high overhead
     }
     m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.00001;
@@ -442,10 +434,10 @@ void ForkLiftDemo::initPhysics()
     // +x - left
     // +y - up
     // +z - forward
-    btCollisionShape* chassisShape = new btBoxShape(btVector3(0.5f * bodyWidth, 0.5f * bodyHeight, 0.5f * bodyLength));
+    btCollisionShape *chassisShape = new btBoxShape(btVector3(0.5f * bodyWidth, 0.5f * bodyHeight, 0.5f * bodyLength));
     m_collisionShapes.push_back(chassisShape);
 
-    btCompoundShape* compound = new btCompoundShape();
+    btCompoundShape *compound = new btCompoundShape();
     m_collisionShapes.push_back(compound);
     btTransform localTrans;
     localTrans.setIdentity();
@@ -460,13 +452,10 @@ void ForkLiftDemo::initPhysics()
     float vehicleMass = 700.0f;
     m_carChassis = localCreateRigidBody(vehicleMass, tr, compound);  //chassisShape);
 
-    if(renderWheelsAsBoxes)
-    {
-        m_wheelShape = new btBoxShape(btVector3(0.5f*wheelWidth, wheelRadius, wheelRadius));
-    }
-    else
-    {
-        m_wheelShape = new btCylinderShapeX(btVector3(0.5f*wheelWidth, wheelRadius, wheelRadius));
+    if (renderWheelsAsBoxes) {
+        m_wheelShape = new btBoxShape(btVector3(0.5f * wheelWidth, wheelRadius, wheelRadius));
+    } else {
+        m_wheelShape = new btCylinderShapeX(btVector3(0.5f * wheelWidth, wheelRadius, wheelRadius));
     }
 
     m_guiHelper->createCollisionShapeGraphicsObject(m_wheelShape);
@@ -477,9 +466,9 @@ void ForkLiftDemo::initPhysics()
     const float color[4] = {0.2, 0.2, 0.2, 1};
     const float scaling[4] = {1, 1, 1, 1};
 
-    for (int i = 0; i < 4; i++)
-    {
-        m_wheelInstances[i] = m_guiHelper->registerGraphicsInstance(wheelGraphicsIndex, position, quaternion, color, scaling);
+    for (int i = 0; i < 4; i++) {
+        m_wheelInstances[i] = m_guiHelper->registerGraphicsInstance(wheelGraphicsIndex, position, quaternion, color,
+                                                                    scaling);
     }
 
     /// create vehicle
@@ -523,9 +512,8 @@ void ForkLiftDemo::initPhysics()
         m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
                             m_tuning, isFrontWheel);
 
-        for (int i = 0; i < m_vehicle->getNumWheels(); i++)
-        {
-            btWheelInfo& wheel = m_vehicle->getWheelInfo(i);
+        for (int i = 0; i < m_vehicle->getNumWheels(); i++) {
+            btWheelInfo &wheel = m_vehicle->getWheelInfo(i);
             wheel.m_suspensionStiffness = suspensionStiffness;
             wheel.m_wheelsDampingRelaxation = suspensionDamping;
             wheel.m_wheelsDampingCompression = suspensionCompression;
@@ -536,31 +524,26 @@ void ForkLiftDemo::initPhysics()
 
     resetVehicle();
 
-    m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
+    m_guiHelper->createCollisionShapeGraphicsObject(m_carChassis->getCollisionShape());
+    m_guiHelper->createCollisionObjectGraphicsObject(m_carChassis, chassisColor);
 }
 
-void ForkLiftDemo::physicsDebugDraw(int debugFlags)
-{
-    if (m_dynamicsWorld && m_dynamicsWorld->getDebugDrawer())
-    {
+void ForkLiftDemo::physicsDebugDraw(int debugFlags) {
+    if (m_dynamicsWorld && m_dynamicsWorld->getDebugDrawer()) {
         m_dynamicsWorld->getDebugDrawer()->setDebugMode(debugFlags);
         m_dynamicsWorld->debugDrawWorld();
     }
 }
 
 //to be implemented by the demo
-void ForkLiftDemo::renderScene()
-{
-    m_guiHelper->syncPhysicsToGraphics(m_dynamicsWorld);
+void ForkLiftDemo::renderScene() {
 
-    for (int i = 0; i < m_vehicle->getNumWheels(); i++)
-    {
+    for (int i = 0; i < m_vehicle->getNumWheels(); i++) {
         //synchronize the wheels with the (interpolated) chassis worldtransform
         m_vehicle->updateWheelTransform(i, true);
 
-        CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
-        if (renderer)
-        {
+        CommonRenderInterface *renderer = m_guiHelper->getRenderInterface();
+        if (renderer) {
             btTransform tr = m_vehicle->getWheelInfo(i).m_worldTransform;
             btVector3 pos = tr.getOrigin();
             btQuaternion orn = tr.getRotation();
@@ -568,6 +551,7 @@ void ForkLiftDemo::renderScene()
         }
     }
 
+    m_guiHelper->syncPhysicsToGraphics(m_dynamicsWorld);
     m_guiHelper->render(m_dynamicsWorld);
 
     ATTRIBUTE_ALIGNED16(btScalar)
@@ -577,21 +561,19 @@ void ForkLiftDemo::renderScene()
     btVector3 worldBoundsMin, worldBoundsMax;
     getDynamicsWorld()->getBroadphase()->getBroadphaseAabb(worldBoundsMin, worldBoundsMax);
 
-    for (i = 0; i < m_vehicle->getNumWheels(); i++)
-    {
+    for (i = 0; i < m_vehicle->getNumWheels(); i++) {
         //synchronize the wheels with the (interpolated) chassis worldtransform
         m_vehicle->updateWheelTransform(i, true);
         //draw wheels (cylinders)
         m_vehicle->getWheelInfo(i).m_worldTransform.getOpenGLMatrix(m);
-        //		m_shapeDrawer->drawOpenGL(m,m_wheelShape,wheelColor,getDebugMode(),worldBoundsMin,worldBoundsMax);
     }
 }
 
-void ForkLiftDemo::stepSimulation(float deltaTime)
-{
+void ForkLiftDemo::stepSimulation(float deltaTime) {
     btVector3 vehiclePosition = m_vehicle->getChassisWorldTransform().getOrigin();
     setCameraPosition(vehiclePosition.x(), vehiclePosition.y(), vehiclePosition.z());
     {
+        // rear wheels
         int wheelIndex = 2;
         m_vehicle->applyEngineForce(gEngineForce, wheelIndex);
         m_vehicle->setBrake(gBreakingForce, wheelIndex);
@@ -599,6 +581,7 @@ void ForkLiftDemo::stepSimulation(float deltaTime)
         m_vehicle->applyEngineForce(gEngineForce, wheelIndex);
         m_vehicle->setBrake(gBreakingForce, wheelIndex);
 
+        // front wheels
         wheelIndex = 0;
         m_vehicle->setSteeringValue(gVehicleSteering, wheelIndex);
         wheelIndex = 1;
@@ -607,20 +590,17 @@ void ForkLiftDemo::stepSimulation(float deltaTime)
 
     float dt = deltaTime;
 
-    if (m_dynamicsWorld)
-    {
+    if (m_dynamicsWorld) {
         //during idle mode, just run 1 simulation step maximum
         int maxSimSubSteps = 2;
 
         int numSimSteps;
         numSimSteps = m_dynamicsWorld->stepSimulation(dt, maxSimSubSteps);
 
-        if (m_dynamicsWorld->getConstraintSolver()->getSolverType() == BT_MLCP_SOLVER)
-        {
-            btMLCPSolver* sol = (btMLCPSolver*)m_dynamicsWorld->getConstraintSolver();
+        if (m_dynamicsWorld->getConstraintSolver()->getSolverType() == BT_MLCP_SOLVER) {
+            btMLCPSolver *sol = (btMLCPSolver *) m_dynamicsWorld->getConstraintSolver();
             int numFallbacks = sol->getNumFallbacks();
-            if (numFallbacks)
-            {
+            if (numFallbacks) {
                 static int totalFailures = 0;
                 totalFailures += numFallbacks;
                 printf("MLCP solver failed %d times, falling back to btSequentialImpulseSolver (SI)\n", totalFailures);
@@ -631,40 +611,36 @@ void ForkLiftDemo::stepSimulation(float deltaTime)
 //#define VERBOSE_FEEDBACK
 #ifdef VERBOSE_FEEDBACK
         if (!numSimSteps)
-			printf("Interpolated transforms\n");
-		else
-		{
-			if (numSimSteps > maxSimSubSteps)
-			{
-				//detect dropping frames
-				printf("Dropped (%i) simulation steps out of %i\n", numSimSteps - maxSimSubSteps, numSimSteps);
-			}
-			else
-			{
-				printf("Simulated (%i) steps\n", numSimSteps);
-			}
-		}
+            printf("Interpolated transforms\n");
+        else
+        {
+            if (numSimSteps > maxSimSubSteps)
+            {
+                //detect dropping frames
+                printf("Dropped (%i) simulation steps out of %i\n", numSimSteps - maxSimSubSteps, numSimSteps);
+            }
+            else
+            {
+                printf("Simulated (%i) steps\n", numSimSteps);
+            }
+        }
 #endif  //VERBOSE_FEEDBACK
     }
 }
 
-void ForkLiftDemo::displayCallback(void)
-{
+void ForkLiftDemo::displayCallback(void) {
     //optional but useful: debug drawing
-    if (m_dynamicsWorld)
-    {
+    if (m_dynamicsWorld) {
         m_dynamicsWorld->debugDrawWorld();
     }
 }
 
-void ForkLiftDemo::clientResetScene()
-{
+void ForkLiftDemo::clientResetScene() {
     exitPhysics();
     initPhysics();
 }
 
-void ForkLiftDemo::resetVehicle()
-{
+void ForkLiftDemo::resetVehicle() {
     gVehicleSteering = 0.f;
     gBreakingForce = defaultBreakingForce;
     gEngineForce = 0.f;
@@ -672,37 +648,28 @@ void ForkLiftDemo::resetVehicle()
     m_carChassis->setCenterOfMassTransform(btTransform::getIdentity());
     m_carChassis->setLinearVelocity(btVector3(0, 0, 0));
     m_carChassis->setAngularVelocity(btVector3(0, 0, 0));
-    m_dynamicsWorld->getBroadphase()->getOverlappingPairCache()->cleanProxyFromPairs(m_carChassis->getBroadphaseHandle(), getDynamicsWorld()->getDispatcher());
-    if (m_vehicle)
-    {
+    m_dynamicsWorld->getBroadphase()->getOverlappingPairCache()->cleanProxyFromPairs(
+            m_carChassis->getBroadphaseHandle(), getDynamicsWorld()->getDispatcher());
+    if (m_vehicle) {
         m_vehicle->resetSuspension();
-        for (int i = 0; i < m_vehicle->getNumWheels(); i++)
-        {
+        for (int i = 0; i < m_vehicle->getNumWheels(); i++) {
             //synchronize the wheels with the (interpolated) chassis worldtransform
             m_vehicle->updateWheelTransform(i, true);
         }
     }
 }
 
-bool ForkLiftDemo::keyboardCallback(int key, int state)
-{
+bool ForkLiftDemo::keyboardCallback(int key, int state) {
     bool handled = false;
     bool isShiftPressed = m_guiHelper->getAppInterface()->m_window->isModifierKeyPressed(B3G_SHIFT);
 
-    if (state)
-    {
-        if (isShiftPressed)
-        {
-            switch (key)
-            {
+    if (state) {
+        if (isShiftPressed) {
+            switch (key) {
             }
-        }
-        else
-        {
-            switch (key)
-            {
-                case B3G_LEFT_ARROW:
-                {
+        } else {
+            switch (key) {
+                case B3G_LEFT_ARROW: {
                     handled = true;
                     gVehicleSteering += steeringIncrement;
                     gVehicleSteering = steeringClamp;
@@ -711,8 +678,7 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
 
                     break;
                 }
-                case B3G_RIGHT_ARROW:
-                {
+                case B3G_RIGHT_ARROW: {
                     handled = true;
                     gVehicleSteering -= steeringIncrement;
                     gVehicleSteering = -steeringClamp;
@@ -721,46 +687,39 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
 
                     break;
                 }
-                case B3G_UP_ARROW:
-                {
+                case B3G_UP_ARROW: {
                     handled = true;
                     gEngineForce = maxEngineForce;
                     gBreakingForce = 0.f;
                     break;
                 }
-                case B3G_DOWN_ARROW:
-                {
+                case B3G_DOWN_ARROW: {
                     handled = true;
-                    gEngineForce = -maxEngineForce;
-                    gBreakingForce = 0.f;
+                    gEngineForce = 0.;
+                    gBreakingForce = maxBreakingForce;
                     break;
                 }
 
-                case B3G_F7:
-                {
+                case B3G_F7: {
                     handled = true;
-                    btDiscreteDynamicsWorld* world = (btDiscreteDynamicsWorld*)m_dynamicsWorld;
+                    btDiscreteDynamicsWorld *world = (btDiscreteDynamicsWorld *) m_dynamicsWorld;
                     world->setLatencyMotionStateInterpolation(!world->getLatencyMotionStateInterpolation());
                     printf("world latencyMotionStateInterpolation = %d\n", world->getLatencyMotionStateInterpolation());
                     break;
                 }
-                case B3G_F6:
-                {
+                case B3G_F6: {
                     handled = true;
                     //switch solver (needs demo restart)
                     useMCLPSolver = !useMCLPSolver;
                     printf("switching to useMLCPSolver = %d\n", useMCLPSolver);
 
                     delete m_constraintSolver;
-                    if (useMCLPSolver)
-                    {
-                        btDantzigSolver* mlcp = new btDantzigSolver();
+                    if (useMCLPSolver) {
+                        btDantzigSolver *mlcp = new btDantzigSolver();
                         //btSolveProjectedGaussSeidel* mlcp = new btSolveProjectedGaussSeidel;
-                        btMLCPSolver* sol = new btMLCPSolver(mlcp);
+                        btMLCPSolver *sol = new btMLCPSolver(mlcp);
                         m_constraintSolver = sol;
-                    }
-                    else
-                    {
+                    } else {
                         m_constraintSolver = new btSequentialImpulseConstraintSolver();
                     }
 
@@ -777,28 +736,22 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
                     break;
             }
         }
-    }
-    else
-    {
-        switch (key)
-        {
-            case B3G_UP_ARROW:
-            {
+    } else {
+        switch (key) {
+            case B3G_UP_ARROW: {
                 gEngineForce = 0.f;
                 gBreakingForce = defaultBreakingForce;
                 handled = true;
                 break;
             }
-            case B3G_DOWN_ARROW:
-            {
+            case B3G_DOWN_ARROW: {
                 gEngineForce = 0.f;
                 gBreakingForce = defaultBreakingForce;
                 handled = true;
                 break;
             }
             case B3G_LEFT_ARROW:
-            case B3G_RIGHT_ARROW:
-            {
+            case B3G_RIGHT_ARROW: {
                 gVehicleSteering = 0.f;
                 handled = true;
                 break;
@@ -811,8 +764,8 @@ bool ForkLiftDemo::keyboardCallback(int key, int state)
     return handled;
 }
 
-btRigidBody* ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform& startTransform, btCollisionShape* shape)
-{
+btRigidBody *
+ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform &startTransform, btCollisionShape *shape) {
     btAssert((!shape || shape->getShapeType() != INVALID_SHAPE_PROXYTYPE));
 
     //rigidbody is dynamic if and only if mass is non zero, otherwise static
@@ -823,25 +776,23 @@ btRigidBody* ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform
         shape->calculateLocalInertia(mass, localInertia);
 
     //using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-    btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
+    btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
 
     btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
 
-    btRigidBody* body = new btRigidBody(cInfo);
+    btRigidBody *body = new btRigidBody(cInfo);
 
     m_dynamicsWorld->addRigidBody(body);
     return body;
 }
 
-void ForkLiftDemo::setCameraPosition(float x, float y, float z)
-{
-    CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
-    CommonCameraInterface* camera = renderer->getActiveCamera();
+void ForkLiftDemo::setCameraPosition(float x, float y, float z) {
+    CommonRenderInterface *renderer = m_guiHelper->getRenderInterface();
+    CommonCameraInterface *camera = renderer->getActiveCamera();
     camera->setCameraTargetPosition(x, y, z);
 }
 
-CommonExampleInterface* ForkLiftCreateFunc(struct CommonExampleOptions& options)
-{
+CommonExampleInterface *ForkLiftCreateFunc(struct CommonExampleOptions &options) {
     return new ForkLiftDemo(options.m_guiHelper);
 }
 
