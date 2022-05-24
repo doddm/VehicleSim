@@ -256,8 +256,16 @@ int main(int argc, char* argv[])
 		app->m_instancingRenderer->init();
 		app->m_instancingRenderer->updateCamera(app->getUpAxis());
 
+        //TODO (mdodd) move this into its own routine
+        char bla[1024];
+        float yellow[4] = {0, 0, 0, 1};
+
 		btScalar dtSec = btScalar(clock.getTimeInSeconds());
-		if (dtSec > 0.1)
+
+        sprintf(bla, "FPS: %g", 1.0/dtSec);
+        app->drawText(bla, 10, 10, 1, yellow);
+
+        if (dtSec > 0.1)
         {
             dtSec = 0.1;
         }

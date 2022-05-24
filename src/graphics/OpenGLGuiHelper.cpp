@@ -1052,10 +1052,6 @@ void OpenGLGuiHelper::createCollisionShapeGraphicsObject(btCollisionShape* colli
 }
 void OpenGLGuiHelper::syncPhysicsToGraphics(const btDiscreteDynamicsWorld* rbWorld)
 {
-	//in VR mode, we skip the synchronization for the second eye
-	if (m_data->m_vrMode && m_data->m_vrSkipShadowPass == 1)
-		return;
-
 	int numCollisionObjects = rbWorld->getNumCollisionObjects();
 	{
 		B3_PROFILE("write all InstanceTransformToCPU");
@@ -1112,25 +1108,7 @@ void OpenGLGuiHelper::syncPhysicsToGraphics(const btDiscreteDynamicsWorld* rbWor
 
 void OpenGLGuiHelper::render(const btDiscreteDynamicsWorld* rbWorld)
 {
-	if (m_data->m_vrMode)
-	{
-		//in VR, we skip the shadow generation for the second eye
-
-		if (m_data->m_vrSkipShadowPass >= 1)
-		{
-			m_data->m_glApp->m_renderer->renderSceneInternal(B3_USE_SHADOWMAP_RENDERMODE);
-			m_data->m_vrSkipShadowPass = 0;
-		}
-		else
-		{
-			m_data->m_glApp->m_renderer->renderScene();
-			m_data->m_vrSkipShadowPass++;
-		}
-	}
-	else
-	{
-		m_data->m_glApp->m_renderer->renderScene();
-	}
+    m_data->m_glApp->m_renderer->renderScene();
 }
 void OpenGLGuiHelper::createPhysicsDebugDrawer(btDiscreteDynamicsWorld* rbWorld)
 {

@@ -46,7 +46,7 @@ class btCollisionShape;
 #include "../../graphics/CommonGraphicsAppInterface.h"
 
 ///VehicleDemo shows how to setup and use the built-in raycast vehicle
-class ForkLiftDemo : public CommonExampleInterface {
+class VehicleSim : public CommonExampleInterface {
 public:
     GUIHelperInterface *m_guiHelper;
 
@@ -91,9 +91,9 @@ public:
     float m_minCameraDistance;
     float m_maxCameraDistance;
 
-    ForkLiftDemo(struct GUIHelperInterface *helper);
+    VehicleSim(struct GUIHelperInterface *helper);
 
-    virtual ~ForkLiftDemo();
+    virtual ~VehicleSim();
 
     virtual void stepSimulation(float deltaTime);
 
@@ -205,7 +205,7 @@ btScalar suspensionRestLength(0.6);
 
 ////////////////////////////////////
 
-ForkLiftDemo::ForkLiftDemo(struct GUIHelperInterface *helper)
+VehicleSim::VehicleSim(struct GUIHelperInterface *helper)
         : m_guiHelper(helper),
           m_carChassis(0),
           m_indexVertexArrays(0),
@@ -220,7 +220,7 @@ ForkLiftDemo::ForkLiftDemo(struct GUIHelperInterface *helper)
     m_useDefaultCamera = false;
 }
 
-void ForkLiftDemo::exitPhysics() {
+void VehicleSim::exitPhysics() {
     //cleanup in the reverse order of creation/initialization
 
     //remove the rigidbodies from the dynamics world and delete them
@@ -281,7 +281,7 @@ void ForkLiftDemo::exitPhysics() {
     m_collisionConfiguration = 0;
 }
 
-ForkLiftDemo::~ForkLiftDemo() {
+VehicleSim::~VehicleSim() {
     //exitPhysics();
 }
 
@@ -354,7 +354,7 @@ unsigned short *LandscapeIdx[] = {
         Landscape08Idx,
 };
 
-void ForkLiftDemo::createLargeMeshBody() {
+void VehicleSim::createLargeMeshBody() {
     btTransform trans;
     trans.setIdentity();
 
@@ -386,7 +386,7 @@ void ForkLiftDemo::createLargeMeshBody() {
     }
 }
 
-void ForkLiftDemo::initPhysics() {
+void VehicleSim::initPhysics() {
     int upAxis = 1;
 
     m_guiHelper->setUpAxis(upAxis);
@@ -528,7 +528,7 @@ void ForkLiftDemo::initPhysics() {
     m_guiHelper->createCollisionObjectGraphicsObject(m_carChassis, chassisColor);
 }
 
-void ForkLiftDemo::physicsDebugDraw(int debugFlags) {
+void VehicleSim::physicsDebugDraw(int debugFlags) {
     if (m_dynamicsWorld && m_dynamicsWorld->getDebugDrawer()) {
         m_dynamicsWorld->getDebugDrawer()->setDebugMode(debugFlags);
         m_dynamicsWorld->debugDrawWorld();
@@ -536,7 +536,7 @@ void ForkLiftDemo::physicsDebugDraw(int debugFlags) {
 }
 
 //to be implemented by the demo
-void ForkLiftDemo::renderScene() {
+void VehicleSim::renderScene() {
 
     for (int i = 0; i < m_vehicle->getNumWheels(); i++) {
         //synchronize the wheels with the (interpolated) chassis worldtransform
@@ -569,7 +569,7 @@ void ForkLiftDemo::renderScene() {
     }
 }
 
-void ForkLiftDemo::stepSimulation(float deltaTime) {
+void VehicleSim::stepSimulation(float deltaTime) {
     btVector3 vehiclePosition = m_vehicle->getChassisWorldTransform().getOrigin();
     setCameraPosition(vehiclePosition.x(), vehiclePosition.y(), vehiclePosition.z());
     {
@@ -628,19 +628,19 @@ void ForkLiftDemo::stepSimulation(float deltaTime) {
     }
 }
 
-void ForkLiftDemo::displayCallback(void) {
+void VehicleSim::displayCallback(void) {
     //optional but useful: debug drawing
     if (m_dynamicsWorld) {
         m_dynamicsWorld->debugDrawWorld();
     }
 }
 
-void ForkLiftDemo::clientResetScene() {
+void VehicleSim::clientResetScene() {
     exitPhysics();
     initPhysics();
 }
 
-void ForkLiftDemo::resetVehicle() {
+void VehicleSim::resetVehicle() {
     gVehicleSteering = 0.f;
     gBreakingForce = defaultBreakingForce;
     gEngineForce = 0.f;
@@ -659,7 +659,7 @@ void ForkLiftDemo::resetVehicle() {
     }
 }
 
-bool ForkLiftDemo::keyboardCallback(int key, int state) {
+bool VehicleSim::keyboardCallback(int key, int state) {
     bool handled = false;
     bool isShiftPressed = m_guiHelper->getAppInterface()->m_window->isModifierKeyPressed(B3G_SHIFT);
 
@@ -765,7 +765,7 @@ bool ForkLiftDemo::keyboardCallback(int key, int state) {
 }
 
 btRigidBody *
-ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform &startTransform, btCollisionShape *shape) {
+VehicleSim::localCreateRigidBody(btScalar mass, const btTransform &startTransform, btCollisionShape *shape) {
     btAssert((!shape || shape->getShapeType() != INVALID_SHAPE_PROXYTYPE));
 
     //rigidbody is dynamic if and only if mass is non zero, otherwise static
@@ -786,14 +786,14 @@ ForkLiftDemo::localCreateRigidBody(btScalar mass, const btTransform &startTransf
     return body;
 }
 
-void ForkLiftDemo::setCameraPosition(float x, float y, float z) {
+void VehicleSim::setCameraPosition(float x, float y, float z) {
     CommonRenderInterface *renderer = m_guiHelper->getRenderInterface();
     CommonCameraInterface *camera = renderer->getActiveCamera();
     camera->setCameraTargetPosition(x, y, z);
 }
 
-CommonExampleInterface *ForkLiftCreateFunc(struct CommonExampleOptions &options) {
-    return new ForkLiftDemo(options.m_guiHelper);
+CommonExampleInterface *VehicleSimCreateFunc(struct CommonExampleOptions &options) {
+    return new VehicleSim(options.m_guiHelper);
 }
 
-B3_STANDALONE_EXAMPLE(ForkLiftCreateFunc)
+B3_STANDALONE_EXAMPLE(VehicleSimCreateFunc)
