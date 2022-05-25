@@ -112,7 +112,7 @@ class VehicleSim : public CommonExampleInterface
 
 	virtual void displayCallback();
 
-	virtual void createLargeMeshBody();
+	virtual void generateGroundTerrain();
 
 	virtual bool mouseMoveCallback(float x, float y)
 	{
@@ -211,6 +211,7 @@ float rollInfluence = 0.1f;  //1.0f;
 
 // whether to render the wheels as boxes instead of cylinders
 bool renderWheelsAsBoxes = false;
+bool useGroundTerrain = false;
 
 btVector4 chassisColor{ 72. / 256., 133. / 256., 237. / 256., 1 };
 btVector4 terrainColor{ 112. / 256., 129. / 256., 87. / 256., 1 };
@@ -377,7 +378,7 @@ unsigned short* LandscapeIdx[] = {
 	Landscape08Idx,
 };
 
-void VehicleSim::createLargeMeshBody()
+void VehicleSim::generateGroundTerrain()
 {
 	btTransform trans;
 	trans.setIdentity();
@@ -417,11 +418,6 @@ void VehicleSim::initPhysics()
 
 	m_guiHelper->setUpAxis(upAxis);
 
-//    btVector3 groundExtents(50, 50, 50);
-//    groundExtents[upAxis] = 3;
-//    btCollisionShape* groundShape = new btBoxShape(groundExtents);
-//    m_collisionShapes.push_back(groundShape);
-
 	m_collisionConfiguration = new btDefaultCollisionConfiguration();
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
 	btVector3 worldMin(-1000, -1000, -1000);
@@ -460,9 +456,21 @@ void VehicleSim::initPhysics()
 	tr.setOrigin(btVector3(0, -3, 0));
 
 	//create ground object
-//    localCreateRigidBody(0, tr, groundShape);
-	createLargeMeshBody();
+	if(useGroundTerrain)
+	{
+		generateGroundTerrain();
+	}
+	else
+	{
+		btVector3 groundExtents(50, 50, 50);
+		groundExtents[upAxis] = 3;
+		btCollisionShape* groundShape = new btBoxShape(groundExtents);
+		m_collisionShapes.push_back(groundShape);
+		btRigidBody* groundRigidBody = localCreateRigidBody(0, tr, groundShape);
 
+		m_guiHelper->createCollisionShapeGraphicsObject(groundShape);
+		m_guiHelper->createCollisionObjectGraphicsObject(groundRigidBody, terrainColor);
+	}
 
 	// Chassis coordinate system
 	// +x - left

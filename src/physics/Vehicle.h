@@ -6,15 +6,19 @@
 #define BULLETGAME_VEHICLE_H
 
 #include "BulletDynamics/Dynamics/btActionInterface.h"
+#include "Tire.h"
 
 class Vehicle : public btActionInterface
 {
  public:
+	btAlignedObjectArray<Tire> m_tires;
+
 	void Update();
 	void UpdateFriction();
 	void UpdateSuspension();
-	void AddWheel();
-	void SetWheelTorque();
+	Tire AddTire(const btVector3& position, const btVector3& rotationAxis, btScalar radius, btScalar width, btScalar friction);
+	void GetNumTires();
+	void SetTireTorque();
 	void SetBrake();
 	void SetAccelerator();
 	void SetSteering();
