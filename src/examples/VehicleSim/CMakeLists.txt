@@ -1,12 +1,8 @@
-# App_BasicExample is a minimal sample creating, stepping and deleting a Bullet dynamics world
 cmake_minimum_required(VERSION 3.13)
 project(VehicleSim)
 
 SET(BULLET_PHYSICS_ROOT ../../../external/bullet)
 SET(BULLET_PHYSICS_EXAMPLES ../../../external/bullet/examples)
-
-#################
-# Standalone BasicExampleGui using OpenGL (but not the example browser)
 
 INCLUDE_DIRECTORIES(
         ${BULLET_PHYSICS_ROOT}/src
@@ -26,9 +22,6 @@ SET(VehicleSim_SRCS
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/CollisionShape2TriangleMesh.cpp
         ${BULLET_PHYSICS_EXAMPLES}/Utils/b3Clock.cpp
         ../../physics/Tire.cpp ../../physics/Tire.h)
-
-#this define maps StandaloneExampleCreateFunc to the right 'CreateFunc'
-ADD_DEFINITIONS(-DB3_USE_STANDALONE_EXAMPLE)
 
 LINK_LIBRARIES(
         BulletDynamics BulletCollision LinearMath OpenGLWindow Bullet3Common 

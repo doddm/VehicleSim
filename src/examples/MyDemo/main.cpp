@@ -20,14 +20,14 @@ subject to the following restrictions:
 #include "../../../external/bullet/examples/OpenGLWindow/SimpleOpenGL3App.h"
 #include "../../graphics/OpenGLGuiHelper.h"
 
-CommonExampleInterface* example;
+CommonExampleInterface* vehicleSim;
 int gSharedMemoryKey = -1;
 
 b3MouseMoveCallback prevMouseMoveCallback = 0;
 static void OnMouseMove(float x, float y)
 {
 	bool handled = false;
-	handled = example->mouseMoveCallback(x, y);
+	handled = vehicleSim->mouseMoveCallback(x, y);
 	if (!handled)
 	{
 		if (prevMouseMoveCallback)
@@ -40,7 +40,7 @@ static void OnMouseDown(int button, int state, float x, float y)
 {
 	bool handled = false;
 
-	handled = example->mouseButtonCallback(button, state, x, y);
+	handled = vehicleSim->mouseButtonCallback(button, state, x, y);
 	if (!handled)
 	{
 		if (prevMouseButtonCallback)
@@ -48,21 +48,6 @@ static void OnMouseDown(int button, int state, float x, float y)
 	}
 }
 
-class LessDummyGuiHelper : public DummyGUIHelper
-{
-	CommonGraphicsApp* m_app;
-
-public:
-	virtual CommonGraphicsApp* getAppInterface()
-	{
-		return m_app;
-	}
-
-	LessDummyGuiHelper(CommonGraphicsApp* app)
-		: m_app(app)
-	{
-	}
-};
 int main(int argc, char* argv[])
 {
 	SimpleOpenGL3App* app = new SimpleOpenGL3App("Bullet Standalone Example", 1024, 768, true);
@@ -79,11 +64,11 @@ int main(int argc, char* argv[])
 
 	CommonExampleOptions options(&gui);
 
-	example = StandaloneExampleCreateFunc(options);
-	example->processCommandLineArgs(argc, argv);
+	vehicleSim = StandaloneExampleCreateFunc(options);
+	vehicleSim->processCommandLineArgs(argc, argv);
 
-	example->initPhysics();
-	example->resetCamera();
+	vehicleSim->initPhysics();
+	vehicleSim->resetCamera();
 
 	b3Clock clock;
 
@@ -96,10 +81,10 @@ int main(int argc, char* argv[])
 		if (dtSec > 0.1)
 			dtSec = 0.1;
 
-		example->stepSimulation(dtSec);
+		vehicleSim->stepSimulation(dtSec);
 		clock.reset();
 
-		example->renderScene();
+		vehicleSim->renderScene();
 
 		DrawGridData dg;
 		dg.upAxis = app->getUpAxis();
@@ -108,8 +93,8 @@ int main(int argc, char* argv[])
 		app->swapBuffer();
 	} while (!app->m_window->requestedExit());
 
-	example->exitPhysics();
-	delete example;
+	vehicleSim->exitPhysics();
+	delete vehicleSim;
 	delete app;
 	return 0;
 }

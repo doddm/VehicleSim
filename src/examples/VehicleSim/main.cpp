@@ -20,11 +20,12 @@ subject to the following restrictions:
 #include "../../../external/bullet/examples/OpenGLWindow/SimpleOpenGL3App.h"
 #include "../../graphics/OpenGLGuiHelper.h"
 #include "LinearMath/btIDebugDraw.h"
+#include "VehicleSim.h"
 
 static CommonGraphicsApp* s_app = 0;
 static CommonWindowInterface* s_window = 0;
 
-CommonExampleInterface* example;
+CommonExampleInterface* vehicleSim;
 int gSharedMemoryKey = -1;
 static bool gEnableDefaultKeyboardShortcuts = true;
 static bool gEnableDefaultMousePicking = true;
@@ -51,9 +52,9 @@ void MyKeyboardCallback(int key, int state)
     //b3Printf("key=%d, state=%d", key, state);
     bool handled = false;
 
-    if (!handled && example)
+    if (!handled && vehicleSim)
     {
-        handled = example->keyboardCallback(key, state);
+        handled = vehicleSim->keyboardCallback(key, state);
     }
 
     if (gEnableDefaultKeyboardShortcuts)
@@ -189,7 +190,7 @@ b3MouseMoveCallback prevMouseMoveCallback = 0;
 static void OnMouseMove(float x, float y)
 {
 	bool handled = false;
-	handled = example->mouseMoveCallback(x, y);
+	handled = vehicleSim->mouseMoveCallback(x, y);
 	if (!handled)
 	{
 		if (prevMouseMoveCallback)
@@ -202,7 +203,7 @@ static void OnMouseDown(int button, int state, float x, float y)
 {
 	bool handled = false;
 
-	handled = example->mouseButtonCallback(button, state, x, y);
+	handled = vehicleSim->mouseButtonCallback(button, state, x, y);
 	if (!handled)
 	{
 		if (prevMouseButtonCallback)
@@ -210,21 +211,6 @@ static void OnMouseDown(int button, int state, float x, float y)
 	}
 }
 
-class LessDummyGuiHelper : public DummyGUIHelper
-{
-	CommonGraphicsApp* m_app;
-
-public:
-	virtual CommonGraphicsApp* getAppInterface()
-	{
-		return m_app;
-	}
-
-	LessDummyGuiHelper(CommonGraphicsApp* app)
-		: m_app(app)
-	{
-	}
-};
 int main(int argc, char* argv[])
 {
 	SimpleOpenGL3App* app = new SimpleOpenGL3App("Vehicle Sim", 1920, 1080, true);
@@ -243,11 +229,11 @@ int main(int argc, char* argv[])
 
 	CommonExampleOptions options(&gui);
 
-	example = StandaloneExampleCreateFunc(options);
-	example->processCommandLineArgs(argc, argv);
+	vehicleSim = VehicleSimCreateFunc(options);
+	vehicleSim->processCommandLineArgs(argc, argv);
 
-	example->initPhysics();
-	example->resetCamera();
+	vehicleSim->initPhysics();
+	vehicleSim->resetCamera();
 
 	b3Clock clock;
 
@@ -270,10 +256,10 @@ int main(int argc, char* argv[])
             dtSec = 0.1;
         }
 
-		example->stepSimulation(dtSec);
+		vehicleSim->stepSimulation(dtSec);
 		clock.reset();
 
-		example->renderScene();
+		vehicleSim->renderScene();
 
 		DrawGridData dg;
 		dg.upAxis = app->getUpAxis();
@@ -285,8 +271,8 @@ int main(int argc, char* argv[])
 		app->swapBuffer();
 	} while (!app->m_window->requestedExit());
 
-	example->exitPhysics();
-	delete example;
+	vehicleSim->exitPhysics();
+	delete vehicleSim;
 	delete app;
 	return 0;
 }

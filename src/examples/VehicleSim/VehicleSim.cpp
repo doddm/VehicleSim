@@ -203,7 +203,7 @@ float wheelRadius = 0.35f;
 float wheelWidth = 0.3f;
 float wheelBaseFront = 2.1f;
 float wheelBaseRear = wheelBaseFront;
-float wheelFriction = 1;
+float wheelFriction = 100;
 float suspensionStiffness = 20.f;
 float suspensionDamping = 2.3f;
 float suspensionCompression = 4.4f;
@@ -211,7 +211,7 @@ float rollInfluence = 0.1f;  //1.0f;
 
 // whether to render the wheels as boxes instead of cylinders
 bool renderWheelsAsBoxes = false;
-bool useGroundTerrain = false;
+bool useGroundTerrain = true;
 
 btVector4 chassisColor{ 72. / 256., 133. / 256., 237. / 256., 1 };
 btVector4 terrainColor{ 112. / 256., 129. / 256., 87. / 256., 1 };
@@ -626,7 +626,7 @@ void VehicleSim::stepSimulation(float deltaTime)
 {
 	btVector3 vehiclePosition = m_vehicle->getChassisWorldTransform().getOrigin();
 	setCameraPosition(vehiclePosition.x(), vehiclePosition.y(), vehiclePosition.z());
-	UpdateHUD();
+//	UpdateHUD();
 	{
 		// rear wheels
 		int wheelIndex = 2;
@@ -893,5 +893,3 @@ CommonExampleInterface* VehicleSimCreateFunc(struct CommonExampleOptions& option
 {
 	return new VehicleSim(options.m_guiHelper);
 }
-
-B3_STANDALONE_EXAMPLE(VehicleSimCreateFunc)

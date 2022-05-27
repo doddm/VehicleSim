@@ -1,7 +1,3 @@
-//
-// Created by mchld on 5/23/2022.
-//
-
 #include "Tire.h"
 
 Tire::Tire(const btVector3& mLocalPosition,
