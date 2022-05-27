@@ -172,7 +172,7 @@ int forwardIndex = 2;
 btVector3 wheelDirectionCS0(0, -1, 0);
 btVector3 wheelAxleCS(-1, 0, 0);
 
-bool useMCLPSolver = true;
+bool useMCLPSolver = false;
 
 #include <stdio.h>  //printf debugging
 
@@ -651,7 +651,8 @@ void VehicleSim::stepSimulation(float deltaTime)
 		int maxSimSubSteps = 2;
 
 		int numSimSteps;
-		numSimSteps = m_dynamicsWorld->stepSimulation(dt, maxSimSubSteps);
+
+		m_dynamicsWorld->stepSimulation(dt, maxSimSubSteps);
 
 		if (m_dynamicsWorld->getConstraintSolver()->getSolverType() == BT_MLCP_SOLVER)
 		{
