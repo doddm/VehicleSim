@@ -1,10 +1,16 @@
 #include <iostream>
-#include "OpenGLWindow/SimpleOpenGL3App.h"
+//#include "OpenGLWindow/SimpleOpenGL3App.h"
 #include "Utils/b3Clock.h"
 #include "physics/Vehicle.h"
-//#include "physics/Vehicle.h"
+#include "CommonInterfaces/CommonExampleInterface.h"
+//#include "ExampleBrowser/OpenGLGuiHelper.h"
+#include "VehicleSim.h"
+
+#include "../../../external/bullet/examples/OpenGLWindow/SimpleOpenGL3App.h"
+#include "../../graphics/OpenGLGuiHelper.h"
 
 static CommonWindowInterface* s_window = 0;
+CommonExampleInterface* vehicleSim;
 
 b3KeyboardCallback prevKeyboardCallback = 0;
 
@@ -29,6 +35,12 @@ void MyKeyboardCallback(int key, int state)
 	}
 }
 
+#include "../../../external/bullet/examples/SharedMemory/SharedMemoryPublic.h"
+
+void OpenGLExampleBrowserVisualizerFlagCallback(int flag, bool enable)
+{
+}
+
 int main(int argc, char* argv[])
 {
 	SimpleOpenGL3App* app = new SimpleOpenGL3App("Vehicle Sim", 1920, 1080, true);
@@ -37,23 +49,29 @@ int main(int argc, char* argv[])
 
 	std::cout << "Hello World" << std::endl;
 
-	Vehicle* truck;
-	truck = new Vehicle();
-	btVector3 tirePosition {1, 2, 3};
-	truck->AddTire(tirePosition, tirePosition, 4.0, 5.0, 86.0);
-	truck->AddTire(tirePosition, tirePosition, 4.0, 5.0, 2005.0);
+	OpenGLGuiHelper gui(app, false);
+	gui.setVisualizerFlagCallback(OpenGLExampleBrowserVisualizerFlagCallback);
 
-	std::cout << truck->GetNumTires() << std::endl;
-	std::cout << truck->m_tires[0].m_friction << std::endl;
+	CommonExampleOptions options(&gui);
+
+	vehicleSim = VehicleSimCreateFunc(options);
+	vehicleSim->initPhysics();
+	vehicleSim->resetCamera();
 
 	b3Clock clock;
 
 	while (!app->m_window->requestedExit())
 	{
-//		clock.getTimeMicroseconds();
-//		clock.reset();
+		app->m_instancingRenderer->init();
+		app->m_instancingRenderer->updateCamera(app->getUpAxis());
+
+		vehicleSim->stepSimulation(0.1);
+		vehicleSim->renderScene();
+
 		app->swapBuffer();
 	}
+
+	vehicleSim->exitPhysics();
 
 	return 0;
 }

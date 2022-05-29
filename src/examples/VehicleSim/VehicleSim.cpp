@@ -112,7 +112,7 @@ class VehicleSim : public CommonExampleInterface
 
 	virtual void displayCallback();
 
-	virtual void generateGroundTerrain();
+	virtual void initGroundTerrain();
 
 	virtual bool mouseMoveCallback(float x, float y)
 	{
@@ -198,9 +198,9 @@ float maxEngineForce = 1000.f;  //this should be engine/velocity dependent
 float gVehicleSteering = 0.f;
 float steeringIncrement = 0.04f;
 float steeringClamp = 0.3f;
-float wheelHeight = 0.8f;
-float wheelRadius = 0.35f;
-float wheelWidth = 0.3f;
+float tireHeight = 0.8f;
+float tireRadius = 0.35f;
+float tireWidth = 0.3f;
 float wheelBaseFront = 2.1f;
 float wheelBaseRear = wheelBaseFront;
 float wheelFriction = 100;
@@ -378,7 +378,7 @@ unsigned short* LandscapeIdx[] = {
 	Landscape08Idx,
 };
 
-void VehicleSim::generateGroundTerrain()
+void VehicleSim::initGroundTerrain()
 {
 	btTransform trans;
 	trans.setIdentity();
@@ -458,7 +458,7 @@ void VehicleSim::initPhysics()
 	//create ground object
 	if(useGroundTerrain)
 	{
-		generateGroundTerrain();
+		initGroundTerrain();
 	}
 	else
 	{
@@ -496,11 +496,11 @@ void VehicleSim::initPhysics()
 
 	if (renderWheelsAsBoxes)
 	{
-		m_wheelShape = new btBoxShape(btVector3(0.5f * wheelWidth, wheelRadius, wheelRadius));
+		m_wheelShape = new btBoxShape(btVector3(0.5f * tireWidth, tireRadius, tireRadius));
 	}
 	else
 	{
-		m_wheelShape = new btCylinderShapeX(btVector3(0.5f * wheelWidth, wheelRadius, wheelRadius));
+		m_wheelShape = new btCylinderShapeX(btVector3(0.5f * tireWidth, tireRadius, tireRadius));
 	}
 
 	m_guiHelper->createCollisionShapeGraphicsObject(m_wheelShape);
@@ -535,27 +535,27 @@ void VehicleSim::initPhysics()
 		const float halfBodyLength = bodyLength * 0.5f;
 
 		// left front
-		btVector3 connectionPointCS0(0.5f * wheelBaseFront, wheelHeight, halfBodyLength - wheelRadius);
+		btVector3 connectionPointCS0(0.5f * wheelBaseFront, tireHeight, halfBodyLength - tireRadius);
 
-		m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
+		m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, tireRadius,
 			m_tuning, isFrontWheel);
 
 		// right front
-		connectionPointCS0 = btVector3(-0.5f * wheelBaseFront, wheelHeight, halfBodyLength - wheelRadius);
+		connectionPointCS0 = btVector3(-0.5f * wheelBaseFront, tireHeight, halfBodyLength - tireRadius);
 
-		m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
+		m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, tireRadius,
 			m_tuning, isFrontWheel);
 
 		// right rear
-		connectionPointCS0 = btVector3(-0.5f * wheelBaseRear, wheelHeight,
-			-halfBodyLength + wheelRadius);
+		connectionPointCS0 = btVector3(-0.5f * wheelBaseRear, tireHeight,
+			-halfBodyLength + tireRadius);
 		isFrontWheel = false;
-		m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
+		m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, tireRadius,
 			m_tuning, isFrontWheel);
 
 		// left rear
-		connectionPointCS0 = btVector3(0.5f * wheelBaseRear, wheelHeight, -halfBodyLength + wheelRadius);
-		m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius,
+		connectionPointCS0 = btVector3(0.5f * wheelBaseRear, tireHeight, -halfBodyLength + tireRadius);
+		m_vehicle->addWheel(connectionPointCS0, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, tireRadius,
 			m_tuning, isFrontWheel);
 
 		for (int i = 0; i < m_vehicle->getNumWheels(); i++)

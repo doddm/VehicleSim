@@ -17,10 +17,12 @@ INCLUDE_DIRECTORIES(
 
 SET(VehicleTester_SRCS
         main.cpp
+        ../../graphics/OpenGLGuiHelper.cpp
         ../../physics/Vehicle.cpp
         ../../physics/Vehicle.h
         ../../physics/Tire.cpp
         ../../physics/Tire.h
+        ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/CollisionShape2TriangleMesh.cpp
         ${BULLET_PHYSICS_EXAMPLES}/Utils/b3Clock.cpp
         VehicleSim.cpp VehicleSim.h)
 
