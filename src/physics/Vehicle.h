@@ -3,24 +3,29 @@
 
 #include "btBulletDynamicsCommon.h"
 #include "Tire.h"
+#include "Raycast.h"
 
 class Vehicle : public btActionInterface
 {
  public:
-	Vehicle(btRigidBody* pBody);
-	void Update();
-	void UpdateFriction();
-	void UpdateSuspension();
-	Tire& AddTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir, btScalar friction,
+	explicit Vehicle(btRigidBody* pBody, Raycast* pRaycast);
+	void update();
+	void updateFriction();
+	void updateSuspension();
+	const btRigidBody* getRigidBody() const;
+	const btTransform& getChassisWorldTransform() const;
+	Tire& addTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir, btScalar friction,
 			btScalar width, btScalar radius);
-	int GetNumTires() const;
-	const Tire& GetTire(int tireIndex) const;
+	int getNumTires() const;
+	const Tire& getTire(int tireIndex) const;
 	void updateTireWorldPositionRotation(Tire& tire);
 	void updateTireTransform(int tireIndex);
-	void SetTireTorque();
-	void SetBrake();
-	void SetAccelerator();
-	void SetSteering();
+	// TODO move this and the Raycast member to the Tire class
+	bool castRay(Tire& tire);
+	void setTireTorque();
+	void setBrake();
+	void setAccelerator();
+	void setSteering();
 
 	~Vehicle() override;
 
@@ -33,6 +38,7 @@ class Vehicle : public btActionInterface
 	void debugDraw(btIDebugDraw* debugDrawer) override;
 
 private:
+	Raycast* m_raycast;
 	btRigidBody* m_chassisRigidBody;
 	btAlignedObjectArray<Tire> m_tires;
 };

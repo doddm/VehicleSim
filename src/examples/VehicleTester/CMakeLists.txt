@@ -22,6 +22,8 @@ SET(VehicleTester_SRCS
         ../../physics/Vehicle.h
         ../../physics/Tire.cpp
         ../../physics/Tire.h
+        ../../physics/Raycast.h
+        ../../physics/Raycast.cpp
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/CollisionShape2TriangleMesh.cpp
         ${BULLET_PHYSICS_EXAMPLES}/Utils/b3Clock.cpp
         VehicleSim.cpp VehicleSim.h)

@@ -1,44 +1,58 @@
+#include <iostream>
 #include "Vehicle.h"
 
-Vehicle::Vehicle(btRigidBody* pBody)
+Vehicle::Vehicle(btRigidBody* pBody, Raycast* pRaycast)
 {
 	m_chassisRigidBody = pBody;
+	m_raycast = pRaycast;
 }
 
-void Vehicle::Update()
+void Vehicle::update()
 {
 	return;
 }
 
-void Vehicle::UpdateFriction()
+void Vehicle::updateFriction()
 {
 	return;
 }
 
-int Vehicle::GetNumTires() const
+const btRigidBody* Vehicle::getRigidBody() const
+{
+	return m_chassisRigidBody;
+}
+
+const btTransform& Vehicle::getChassisWorldTransform() const
+{
+	return getRigidBody()->getCenterOfMassTransform();
+}
+
+int Vehicle::getNumTires() const
 {
 	return m_tires.size();
 }
 
-Tire& Vehicle::AddTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir,
+Tire& Vehicle::addTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir,
 		btScalar friction, btScalar width, btScalar radius)
 {
 	Tire tireToAdd(position, rotationAxis, suspensionDir, radius, width, friction);
 	m_tires.push_back(tireToAdd);
 	updateTireWorldPositionRotation(tireToAdd);
-	updateTireTransform(GetNumTires() - 1);
+	updateTireTransform(getNumTires() - 1);
 	return tireToAdd;
 }
 
-const Tire& Vehicle::GetTire(int tireIndex) const
+const Tire& Vehicle::getTire(int tireIndex) const
 {
 	return m_tires[tireIndex];
 }
 
 void Vehicle::updateTireWorldPositionRotation(Tire& tire)
 {
-	btTransform chassisTransform = m_chassisRigidBody->getCenterOfMassTransform();
+	btTransform chassisTransform = getChassisWorldTransform();
 	tire.m_position = chassisTransform(tire.m_localPosition);
+	std::cout << "local position = " << tire.m_localPosition.z() << std::endl;
+	std::cout << "world position = " << tire.m_position.z() << std::endl;
 	tire.m_rotationAxis = chassisTransform.getBasis() * tire.m_localRotationAxis;
 	tire.m_suspensionDir = chassisTransform.getBasis() * tire.m_localSuspensionDir;
 	return;
@@ -75,14 +89,51 @@ void Vehicle::updateTireTransform(int tireIndex)
 	basis2[2][2] = fwd[2];
 
 	tire.m_worldTransform.setBasis(steeringMat * rotatingMat * basis2);
-	tire.m_worldTransform.setOrigin(
-			tire.m_position + tire.m_suspensionDir * tire.m_suspensionLength);
-}
-
-Vehicle::~Vehicle()
-{
+	tire.m_worldTransform.setOrigin(tire.m_position + tire.m_suspensionDir * tire.m_suspensionLength);
 }
 
 void Vehicle::debugDraw(btIDebugDraw* debugDrawer)
 {
+}
+void Vehicle::updateSuspension()
+{
+
+}
+void Vehicle::setTireTorque()
+{
+
+}
+void Vehicle::setBrake()
+{
+
+}
+void Vehicle::setSteering()
+{
+
+}
+void Vehicle::setAccelerator()
+{
+
+}
+Vehicle::~Vehicle()
+{
+
+}
+bool Vehicle::castRay(Tire& tire)
+{
+	btVector3 start;
+	btVector3 stop;
+
+	start = tire.m_position;
+	stop = tire.m_suspensionDir * 10;
+
+	RaycastHit hitInfo;
+	bool isHit = m_raycast->castRay(start, stop, hitInfo);
+
+	if(isHit)
+	{
+		hitInfo.debugPrint();
+	}
+
+	return false;
 }

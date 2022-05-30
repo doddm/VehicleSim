@@ -14,8 +14,12 @@ class CommonExampleInterface* VehicleSimCreateFunc(struct CommonExampleOptions& 
 class VehicleSim : public CommonExampleInterface
 {
 public:
+	/// greenish color
 	const btVector4 terrainColor{ 112. / 256., 129. / 256., 87. / 256., 1 };
+	/// bluish color
 	const btVector4 chassisColor{ 72. / 256., 133. / 256., 237. / 256., 1 };
+	/// dark gray color
+	const btVector4 tireColor{ 0.2, 0.2, 0.2, 1 };
 
 	GUIHelperInterface* m_guiHelper;
 
@@ -34,6 +38,8 @@ public:
 	btRigidBody* m_vehicleChassis;
 
 	Vehicle* m_vehicle;
+
+	Raycast* m_vehicleRaycast;
 
 	btCollisionShape* m_tireShape;
 
@@ -55,6 +61,8 @@ public:
 
 private:
 	void initGroundTerrain();
+	void createVehicle();
+	void addTiresToVehicle();
 };
 
 #endif //BULLETGAME_VEHICLESIM_H
