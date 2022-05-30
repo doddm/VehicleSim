@@ -6,25 +6,33 @@
 // TODO add rotational inertia to the tire
 struct Tire
 {
-	Tire(const btVector3& mLocalPosition, const btVector3& mLocalRotationAxis,
-			const btVector3& mLocalSuspensionDir, btScalar mRadius, btScalar mWidth, btScalar mFriction);
+	Tire(const btVector3& mLocalChassisConnectionPosition,
+			const btVector3& mLocalRotationAxis,
+			const btVector3& mLocalSuspensionDir,
+			const btScalar mSuspensionLength,
+			btScalar mRadius,
+			btScalar mWidth,
+			btScalar mFriction);
  public:
+	/// distance between the chassis connection and the axle
+	const btScalar m_suspensionLength;
+
 	btTransform m_worldTransform;
 
-	/// the tire position in world space
-	btVector3 m_position;
-	/// the suspension travel direction in world space. Directed from the axle towards the ground
+	/// position where the tire suspension connects to the chassis in world space
+	btVector3 m_ChassisConnectionPosition;
+	/// suspension travel direction in world space. Directed from the axle to the bottom of the tire [unit length]
 	btVector3 m_suspensionDir;
-	/// the tire axle in world space
+	/// tire axle in world space
 	btVector3 m_rotationAxis;
 
-	/// the tire position in local space
-	btVector3 m_localPosition;
-	/// the suspension travel direction in local space. Directed from the axle towards the ground
+	/// position where the tire suspension connects to the chassis in local space
+	btVector3 m_localChassisConnectionPosition;
+	/// suspension travel direction in local space. Directed from the axle to the bottom of the tire [unit length]
 	btVector3 m_localSuspensionDir;
-	/// the tire axle in local space
+	/// tire axle in local space
 	btVector3 m_localRotationAxis;
-	/// the current rotation angle of the tire (only used for tire animation -- no physics yet TODO)
+	/// current rotation angle of the tire (only used for tire animation -- no physics yet TODO)
 	btScalar m_currentRotation{};
 
 	btScalar m_radius{};
@@ -32,7 +40,7 @@ struct Tire
 	btScalar m_friction{};
 	btScalar m_suspensionStiffness{};
 	btScalar m_suspensionDamping{};
-	btScalar m_suspensionLength{};
+	btScalar m_currentSuspensionLength{};
 	btScalar m_engineTorque{};
 	btScalar m_brakeTorque{};
 

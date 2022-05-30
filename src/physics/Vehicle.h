@@ -8,13 +8,15 @@
 class Vehicle : public btActionInterface
 {
  public:
+	const int numWheels = 4;
+
 	explicit Vehicle(btRigidBody* pBody, Raycast* pRaycast);
-	void update();
-	void updateFriction();
-	void updateSuspension();
+	void update(btScalar step);
+	void updateFriction(btScalar step);
+	void updateSuspension(btScalar step);
 	const btRigidBody* getRigidBody() const;
 	const btTransform& getChassisWorldTransform() const;
-	Tire& addTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir, btScalar friction,
+	Tire& addTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir, btScalar suspensionLength, btScalar friction,
 			btScalar width, btScalar radius);
 	int getNumTires() const;
 	const Tire& getTire(int tireIndex) const;
@@ -29,10 +31,11 @@ class Vehicle : public btActionInterface
 
 	~Vehicle() override;
 
+	///btActionInterface implementation
 	void updateAction(btCollisionWorld* collisionWorld, btScalar step) override
 	{
 		(void)collisionWorld;
-//		updateVehicle(step);
+		update(step);
 	}
 
 	void debugDraw(btIDebugDraw* debugDrawer) override;
