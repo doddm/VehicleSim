@@ -24,7 +24,8 @@ float wheelBaseFront = 2.1f;
 float wheelBaseRear = wheelBaseFront;
 float wheelFriction = 100;
 float suspensionStiffness = 20.f;
-float suspensionDamping = 2.3f;
+//float suspensionDamping = 2.3f;
+float suspensionDamping = 0.0f;
 float suspensionCompression = 4.4f;
 float suspensionLength = 0.6;
 float rollInfluence = 0.1f; // 1.0f;
@@ -69,7 +70,7 @@ void VehicleSim::initPhysics()
 
 	m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
 
-	//	m_dynamicsWorld->setGravity(btVector3(0, 0.1, 0));
+//		m_dynamicsWorld->setGravity(btVector3(0, -1.0, 0));
 
 	initGroundTerrain();
 
@@ -153,7 +154,8 @@ void VehicleSim::addTiresToVehicle()
 		suspensionLength,
 		wheelFriction,
 		tireWidth,
-		tireRadius);
+		tireRadius,
+		suspensionStiffness);
 
 	btVector3 rightFrontTirePositionLocal(-0.5f * wheelBaseFront, tireHeight, halfBodyLength - tireRadius);
 	m_vehicle->addTire(rightFrontTirePositionLocal,
@@ -162,7 +164,8 @@ void VehicleSim::addTiresToVehicle()
 		suspensionLength,
 		wheelFriction,
 		tireWidth,
-		tireRadius);
+		tireRadius,
+		suspensionStiffness);
 
 	btVector3 leftRearTirePositionLocal(0.5f * wheelBaseFront, tireHeight, tireRadius - halfBodyLength);
 	m_vehicle->addTire(leftRearTirePositionLocal,
@@ -171,7 +174,8 @@ void VehicleSim::addTiresToVehicle()
 		suspensionLength,
 		wheelFriction,
 		tireWidth,
-		tireRadius);
+		tireRadius,
+		suspensionStiffness);
 
 	btVector3 rightRearTirePositionLocal(-0.5f * wheelBaseFront, tireHeight, tireRadius - halfBodyLength);
 	m_vehicle->addTire(rightRearTirePositionLocal,
@@ -180,7 +184,8 @@ void VehicleSim::addTiresToVehicle()
 		suspensionLength,
 		wheelFriction,
 		tireWidth,
-		tireRadius);
+		tireRadius,
+		suspensionStiffness);
 }
 
 void VehicleSim::initGroundTerrain()
@@ -280,7 +285,7 @@ void VehicleSim::renderScene()
 	for (int i = 0; i < m_vehicle->getNumTires(); i++)
 	{
 		// synchronize the wheels with the (interpolated) chassis worldtransform
-		m_vehicle->updateTireTransform(i);
+		m_vehicle->setTireWorldTransform(i);
 
 		CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
 		if (renderer)

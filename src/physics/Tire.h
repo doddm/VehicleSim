@@ -12,7 +12,8 @@ struct Tire
 			const btScalar mSuspensionLength,
 			btScalar mRadius,
 			btScalar mWidth,
-			btScalar mFriction);
+			btScalar mFriction,
+			btScalar mSuspensionStiffness);
  public:
 	/// distance between the chassis connection and the axle
 	const btScalar m_suspensionLength;
@@ -32,8 +33,18 @@ struct Tire
 	btVector3 m_localSuspensionDir;
 	/// tire axle in local space
 	btVector3 m_localRotationAxis;
+	/// the velocity of the tire
+	btScalar m_localVelocity;
+
+	/// position where the tire is contacting the ground in world space
+	btVector3 m_groundContactPosition;
+	btVector3 m_groundNormal;
+	btScalar m_penetrationDepth;
+
 	/// current rotation angle of the tire (only used for tire animation -- no physics yet TODO)
 	btScalar m_currentRotation{};
+
+
 
 	btScalar m_radius{};
 	btScalar m_width{};

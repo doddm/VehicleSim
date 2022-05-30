@@ -12,16 +12,16 @@ class Vehicle : public btActionInterface
 
 	explicit Vehicle(btRigidBody* pBody, Raycast* pRaycast);
 	void update(btScalar step);
-	void updateFriction(btScalar step);
+	void updateTireFriction(btScalar step);
 	void updateSuspension(btScalar step);
 	const btRigidBody* getRigidBody() const;
 	const btTransform& getChassisWorldTransform() const;
 	Tire& addTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir, btScalar suspensionLength, btScalar friction,
-			btScalar width, btScalar radius);
+			btScalar width, btScalar radius, btScalar suspensionStiffness);
 	int getNumTires() const;
 	const Tire& getTire(int tireIndex) const;
 	void updateTireWorldPositionRotation(Tire& tire);
-	void updateTireTransform(int tireIndex);
+	void setTireWorldTransform(int tireIndex);
 	// TODO move this and the Raycast member to the Tire class
 	bool castRay(Tire& tire);
 	void setTireTorque();
