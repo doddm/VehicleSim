@@ -1,4 +1,4 @@
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp util/DebugUtil.h)
 
 add_subdirectory(examples)
 add_subdirectory(input)

@@ -1,3 +1,7 @@
+//
+// Created by Michael Dodd 2022.
+//
+
 #ifndef BULLETGAME_VEHICLE_H
 #define BULLETGAME_VEHICLE_H
 
@@ -17,7 +21,7 @@ class Vehicle : public btActionInterface
 	const btRigidBody* getRigidBody() const;
 	const btTransform& getChassisWorldTransform() const;
 	Tire& addTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir, btScalar suspensionLength, btScalar friction,
-			btScalar width, btScalar radius, btScalar suspensionStiffness);
+			btScalar width, btScalar radius, bool isSteerable);
 	int getNumTires() const;
 	const Tire& getTire(int tireIndex) const;
 	void updateTireWorldPositionRotation(Tire& tire);
@@ -25,9 +29,13 @@ class Vehicle : public btActionInterface
 	// TODO move this and the Raycast member to the Tire class
 	bool castRay(Tire& tire);
 	void setTireTorque();
-	void setBrake();
-	void setAccelerator();
-	void setSteering();
+	void setBrake(btScalar brakeForce);
+	void setAccelerator(btScalar engineForce);
+	void setSteering(btScalar angle);
+	void setSuspensionStiffness(btScalar stiffness);
+	btScalar getSuspensionStiffness();
+	void setSuspensionDamping(btScalar damping);
+	btScalar getSuspensionDamping();
 
 	~Vehicle() override;
 
@@ -44,6 +52,8 @@ private:
 	Raycast* m_raycast;
 	btRigidBody* m_chassisRigidBody;
 	btAlignedObjectArray<Tire> m_tires;
+	btScalar m_suspensionStiffness;
+	btScalar m_suspensionDamping;
 };
 
 #endif // BULLETGAME_VEHICLE_H

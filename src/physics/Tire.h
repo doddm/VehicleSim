@@ -1,3 +1,7 @@
+//
+// Created by Michael Dodd 2022.
+//
+
 #ifndef BULLETGAME_SRC_PHYSICS_TIRE_H_
 #define BULLETGAME_SRC_PHYSICS_TIRE_H_
 
@@ -13,7 +17,7 @@ struct Tire
 			btScalar mRadius,
 			btScalar mWidth,
 			btScalar mFriction,
-			btScalar mSuspensionStiffness);
+			bool isTireSteerable);
  public:
 	/// distance between the chassis connection and the axle
 	const btScalar m_suspensionLength;
@@ -44,13 +48,9 @@ struct Tire
 	/// current rotation angle of the tire (only used for tire animation -- no physics yet TODO)
 	btScalar m_currentRotation{};
 
-
-
 	btScalar m_radius{};
 	btScalar m_width{};
 	btScalar m_friction{};
-	btScalar m_suspensionStiffness{};
-	btScalar m_suspensionDamping{};
 	btScalar m_currentSuspensionLength{};
 	btScalar m_engineTorque{};
 	btScalar m_brakeTorque{};
@@ -60,6 +60,8 @@ struct Tire
 
 	/// Steering angle [rad.]
 	btScalar m_steeringAngle{};
+
+	bool isSteerable;
 };
 
 #endif //BULLETGAME_SRC_PHYSICS_TIRE_H_

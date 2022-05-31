@@ -1,5 +1,9 @@
-#include <iostream>
+//
+// Created by Michael Dodd 2022.
+//
+
 #include "Vehicle.h"
+#include "util/DebugUtil.h"
 
 Vehicle::Vehicle(btRigidBody* pBody, Raycast* pRaycast)
 {
@@ -17,6 +21,22 @@ void Vehicle::update(btScalar step)
 	}
 
 	updateSuspension(step);
+
+	for(int i = 0; i < numWheels; i++)
+	{
+		btVector3 groundContactPosition = m_tires[i].m_groundContactPosition;
+		btVector3 slipVelocity = m_chassisRigidBody->getVelocityInLocalPoint(groundContactPosition);
+		btVector3 tireAxleDirection = m_tires[i].m_rotationAxis;
+
+		// todo extend this for arbitrary terrain normals
+		btVector3 groundNormal(0, 1, 0);
+		btVector3 tireForward = -tireAxleDirection.cross(groundNormal);
+
+		DebugUtil::printVector3(tireForward, "forward vector ");
+		DebugUtil::printVector3(slipVelocity, "slip velocity ");
+
+	}
+
 }
 
 void Vehicle::updateTireFriction(btScalar step)
@@ -25,17 +45,22 @@ void Vehicle::updateTireFriction(btScalar step)
 }
 void Vehicle::updateSuspension(btScalar step)
 {
-	btScalar mass = 700.0/4;
+	btScalar mass = m_chassisRigidBody->getMass()/numWheels;
 	for(int i = 0; i < numWheels; i++)
 	{
 		Tire& tire = m_tires[i];
 		btScalar displacement = tire.m_currentSuspensionLength - tire.m_suspensionLength;
-		btScalar springForceMag = displacement * tire.m_suspensionStiffness * mass;
+		btScalar springForceMag = displacement * m_suspensionStiffness;
 		btVector3 springImpulse = springForceMag * step * tire.m_suspensionDir;
 		btVector3 relativePosition = tire.m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
-//		std::cout << "Spring impulse Mag =" << springImpulse.length() << std::endl;
 
-		m_chassisRigidBody->applyImpulse(springImpulse, relativePosition);
+
+		btScalar damperForceMag = tire.m_localVelocity * m_suspensionDamping;
+		btVector3 damperImpulse = damperForceMag * step * tire.m_suspensionDir;
+
+		btVector3 suspensionImpulse = mass*(springImpulse + damperImpulse);
+
+		m_chassisRigidBody->applyImpulse(suspensionImpulse, relativePosition);
 	}
 }
 
@@ -54,10 +79,9 @@ int Vehicle::getNumTires() const
 	return m_tires.size();
 }
 
-Tire& Vehicle::addTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir, const btScalar suspensionLength,
-		btScalar friction, btScalar width, btScalar radius, btScalar suspensionStiffness)
+Tire& Vehicle::addTire(const btVector3& position, const btVector3& rotationAxis, const btVector3& suspensionDir, const btScalar suspensionLength, btScalar friction, btScalar width, btScalar radius, bool isSteerable)
 {
-	Tire tireToAdd(position, rotationAxis, suspensionDir, suspensionLength, radius, width, friction, suspensionStiffness);
+	Tire tireToAdd(position, rotationAxis, suspensionDir, suspensionLength, radius, width, friction, isSteerable);
 	m_tires.push_back(tireToAdd);
 	updateTireWorldPositionRotation(tireToAdd);
 	setTireWorldTransform(getNumTires() - 1);
@@ -118,22 +142,32 @@ void Vehicle::setTireTorque()
 {
 
 }
-void Vehicle::setBrake()
+void Vehicle::setBrake(btScalar brakeForce)
 {
-
+	m_chassisRigidBody->applyCentralForce(brakeForce * btVector3(0,0,-1));
 }
-void Vehicle::setSteering()
+
+void Vehicle::setSteering(btScalar angle)
 {
-
+	for(int i = 0; i < numWheels; i++)
+	{
+		if(m_tires[i].isSteerable)
+		{
+			m_tires[i].m_steeringAngle = angle;
+		}
+	}
 }
-void Vehicle::setAccelerator()
+
+void Vehicle::setAccelerator(btScalar engineForce)
 {
-
+	m_chassisRigidBody->applyCentralForce(engineForce * btVector3(0,0,1));
 }
+
 Vehicle::~Vehicle()
 {
 
 }
+
 bool Vehicle::castRay(Tire& tire)
 {
 	btVector3 start;
@@ -159,6 +193,30 @@ bool Vehicle::castRay(Tire& tire)
 		///relative velocity of the tire to the ground in world space
 		btVector3 contactVelocity = m_chassisRigidBody->getVelocityInLocalPoint(tireContactToCoM);
 		btScalar normalVelocity = contactVelocity.dot(tire.m_groundNormal);
+		tire.m_localVelocity = normalVelocity;
+
+
+		// TODO figure out why this works but the above is unstable
+		btScalar denominator = tire.m_groundNormal.dot(tire.m_suspensionDir);
+
+		btVector3 chassis_velocity_at_contactPoint;
+		btVector3 relpos = tire.m_groundContactPosition - getRigidBody()->getCenterOfMassPosition();
+
+		chassis_velocity_at_contactPoint = getRigidBody()->getVelocityInLocalPoint(relpos);
+
+		btScalar projVel = tire.m_groundNormal.dot(chassis_velocity_at_contactPoint);
+
+//		if (denominator >= btScalar(-0.1))
+//		{
+//			wheel.m_suspensionRelativeVelocity = btScalar(0.0);
+//			wheel.m_clippedInvContactDotSuspension = btScalar(1.0) / btScalar(0.1);
+//		}
+//		else
+//		{
+			btScalar inv = btScalar(-1.) / denominator;
+			tire.m_localVelocity = projVel * inv;
+//			wheel.m_clippedInvContactDotSuspension = inv;
+//		}
 
 		return  true;
 	}
@@ -168,6 +226,19 @@ bool Vehicle::castRay(Tire& tire)
 
 	return false;
 }
-
-
-
+void Vehicle::setSuspensionStiffness(btScalar stiffness)
+{
+	m_suspensionStiffness= stiffness;
+}
+btScalar Vehicle::getSuspensionStiffness()
+{
+	return m_suspensionStiffness;
+}
+void Vehicle::setSuspensionDamping(btScalar damping)
+{
+	m_suspensionDamping = damping;
+}
+btScalar Vehicle::getSuspensionDamping()
+{
+	return m_suspensionDamping;
+}

@@ -1,7 +1,15 @@
+//
+// Created by Michael Dodd 2022.
+//
+
 #include "VehicleSim.h"
-#include "../../graphics/CommonRenderInterface.h"
 #include "btBulletDynamicsCommon.h"
+#include "../../graphics/CommonRenderInterface.h"
+#include "../../physics/CommonRigidBodyBase.h"
+
 #include <iostream>
+
+float gravity = 9.81;
 
 /// terrain dimensions [m]
 float terrainExtent = 100;
@@ -17,18 +25,23 @@ float tireHeight = 0.8f;
 float tireRadius = 0.35f;
 float tireWidth = 0.3f;
 
-float gVehicleSteering = 0.f;
+float currentSteeringAngle = 0.f;
+float defaultSteeringAngle = 0.3f;
+float defaultBrakingForce = 10.f;
+float maxBrakingForce = 100.f;
+float currentBrakingForce = 0.f;
+float maxEngineForce = 1000.f;
+float currentEngineForce = 0.f;
+
 float steeringIncrement = 0.04f;
-float steeringClamp = 0.3f;
 float wheelBaseFront = 2.1f;
 float wheelBaseRear = wheelBaseFront;
 float wheelFriction = 100;
 float suspensionStiffness = 20.f;
-//float suspensionDamping = 2.3f;
-float suspensionDamping = 0.0f;
+float suspensionDamping = 3.0f;
 float suspensionCompression = 4.4f;
 float suspensionLength = 0.6;
-float rollInfluence = 0.1f; // 1.0f;
+float rollInfluence = 0.1f;
 
 /// unit vector of suspension travel.
 btVector3 tireSuspensionDirLocal(0, -1, 0);
@@ -70,9 +83,9 @@ void VehicleSim::initPhysics()
 
 	m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
 
-//		m_dynamicsWorld->setGravity(btVector3(0, -1.0, 0));
+	m_dynamicsWorld->setGravity(btVector3(0, -gravity, 0));
 
-	initGroundTerrain();
+	initGroundTerrain(1);
 
 	/// Chassis coordinate system
 	/// +x - left
@@ -129,6 +142,7 @@ void VehicleSim::initPhysics()
 	m_guiHelper->createCollisionShapeGraphicsObject(m_vehicleChassis->getCollisionShape());
 	m_guiHelper->createCollisionObjectGraphicsObject(m_vehicleChassis, chassisColor);
 }
+
 void VehicleSim::createVehicle()
 {
 	m_vehicleRaycast = new Raycast(m_dynamicsWorld);
@@ -141,8 +155,13 @@ void VehicleSim::createVehicle()
 	/// pipeline
 	m_dynamicsWorld->addAction(m_vehicle);
 
+	/// configure vehicle suspension
+	m_vehicle->setSuspensionStiffness(suspensionStiffness);
+	m_vehicle->setSuspensionDamping(suspensionDamping);
+
 	addTiresToVehicle();
 }
+
 void VehicleSim::addTiresToVehicle()
 {
 	const float halfBodyLength = bodyLength * 0.5f;
@@ -155,7 +174,7 @@ void VehicleSim::addTiresToVehicle()
 		wheelFriction,
 		tireWidth,
 		tireRadius,
-		suspensionStiffness);
+		true);
 
 	btVector3 rightFrontTirePositionLocal(-0.5f * wheelBaseFront, tireHeight, halfBodyLength - tireRadius);
 	m_vehicle->addTire(rightFrontTirePositionLocal,
@@ -165,7 +184,7 @@ void VehicleSim::addTiresToVehicle()
 		wheelFriction,
 		tireWidth,
 		tireRadius,
-		suspensionStiffness);
+		true);
 
 	btVector3 leftRearTirePositionLocal(0.5f * wheelBaseFront, tireHeight, tireRadius - halfBodyLength);
 	m_vehicle->addTire(leftRearTirePositionLocal,
@@ -175,7 +194,7 @@ void VehicleSim::addTiresToVehicle()
 		wheelFriction,
 		tireWidth,
 		tireRadius,
-		suspensionStiffness);
+		false);
 
 	btVector3 rightRearTirePositionLocal(-0.5f * wheelBaseFront, tireHeight, tireRadius - halfBodyLength);
 	m_vehicle->addTire(rightRearTirePositionLocal,
@@ -185,28 +204,11 @@ void VehicleSim::addTiresToVehicle()
 		wheelFriction,
 		tireWidth,
 		tireRadius,
-		suspensionStiffness);
-}
-
-void VehicleSim::initGroundTerrain()
-{
-	btBoxShape* ground = new btBoxShape(btVector3(0.5f * terrainExtent, 0.5f * terrainThickness, 0.5f * terrainExtent));
-	m_collisionShapes.push_back(ground);
-
-	btTransform tr;
-	tr.setIdentity();
-	tr.setOrigin(btVector3(0, -5, 0));
-
-	btRigidBody* groundRigidBody = localCreateRigidBody(0, tr, ground);
-
-	m_guiHelper->createCollisionShapeGraphicsObject(ground);
-
-	m_guiHelper->createCollisionObjectGraphicsObject(groundRigidBody, terrainColor);
+		false);
 }
 
 void VehicleSim::exitPhysics()
 {
-	std::cout << "EXITING PHYSICS" << std::endl;
 	// remove the rigidbodies from the dynamics world and delete them
 	int i;
 	for (i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
@@ -270,6 +272,10 @@ void VehicleSim::exitPhysics()
 
 void VehicleSim::stepSimulation(float deltaTime)
 {
+	m_vehicle->setSteering(currentSteeringAngle);
+	m_vehicle->setAccelerator(currentEngineForce);
+	m_vehicle->setBrake(currentBrakingForce);
+
 	if (m_dynamicsWorld)
 	{
 		int maxSimSubSteps = 2;
@@ -318,7 +324,91 @@ bool VehicleSim::mouseButtonCallback(int button, int state, float x, float y)
 
 bool VehicleSim::keyboardCallback(int key, int state)
 {
-	return true;
+	bool handled = false;
+	bool isShiftPressed = m_guiHelper->getAppInterface()->m_window->isModifierKeyPressed(B3G_SHIFT);
+
+	if (state)
+	{
+		if (isShiftPressed)
+		{
+			switch (key)
+			{
+			}
+		}
+		else
+		{
+			switch (key)
+			{
+			case B3G_LEFT_ARROW:
+			{
+				handled = true;
+				currentSteeringAngle = defaultSteeringAngle;
+				if (currentSteeringAngle > defaultSteeringAngle)
+				{
+					currentSteeringAngle = defaultSteeringAngle;
+				}
+				break;
+			}
+			case B3G_RIGHT_ARROW:
+			{
+				handled = true;
+				currentSteeringAngle = -defaultSteeringAngle;
+				if (currentSteeringAngle < -defaultSteeringAngle)
+				{
+					currentSteeringAngle = -defaultSteeringAngle;
+				}
+				break;
+			}
+			case B3G_UP_ARROW:
+			{
+				handled = true;
+				currentEngineForce = maxEngineForce;
+				currentBrakingForce = 0.f;
+				break;
+			}
+			case B3G_DOWN_ARROW:
+			{
+				handled = true;
+				currentEngineForce = 0.;
+				currentBrakingForce = maxBrakingForce;
+				break;
+			}
+			default:
+				break;
+			}
+		}
+	}
+	else
+	{
+		switch (key)
+		{
+		case B3G_UP_ARROW:
+		{
+			currentEngineForce = 0.f;
+			currentBrakingForce = defaultBrakingForce;
+			handled = true;
+			break;
+		}
+		case B3G_DOWN_ARROW:
+		{
+			currentEngineForce = 0.f;
+			currentBrakingForce = defaultBrakingForce;
+			handled = true;
+			break;
+		}
+		case B3G_LEFT_ARROW:
+		case B3G_RIGHT_ARROW:
+		{
+//			currentSteeringAngle = 0.f;
+			handled = true;
+			break;
+		}
+		default:
+
+			break;
+		}
+	}
+	return handled;
 }
 
 btRigidBody* VehicleSim::localCreateRigidBody(btScalar mass, const btTransform& startTransform, btCollisionShape* shape)
@@ -355,4 +445,91 @@ void VehicleSim::resetCamera()
 CommonExampleInterface* VehicleSimCreateFunc(struct CommonExampleOptions& options)
 {
 	return new VehicleSim(options.m_guiHelper);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// LargeMesh
+#include "../../../external/bullet/examples/Benchmarks/landscapeData.h"
+
+int LandscapeVtxCount[] =
+	{ Landscape01VtxCount, Landscape02VtxCount, Landscape03VtxCount, Landscape04VtxCount, Landscape05VtxCount,
+	  Landscape06VtxCount, Landscape07VtxCount, Landscape08VtxCount, };
+
+int LandscapeIdxCount[] =
+	{ Landscape01IdxCount, Landscape02IdxCount, Landscape03IdxCount, Landscape04IdxCount, Landscape05IdxCount,
+	  Landscape06IdxCount, Landscape07IdxCount, Landscape08IdxCount, };
+
+btScalar* LandscapeVtx[] =
+	{ Landscape01Vtx, Landscape02Vtx, Landscape03Vtx, Landscape04Vtx, Landscape05Vtx, Landscape06Vtx, Landscape07Vtx,
+	  Landscape08Vtx, };
+
+btScalar* LandscapeNml[] =
+	{ Landscape01Nml, Landscape02Nml, Landscape03Nml, Landscape04Nml, Landscape05Nml, Landscape06Nml, Landscape07Nml,
+	  Landscape08Nml, };
+
+btScalar* LandscapeTex[] =
+	{ Landscape01Tex, Landscape02Tex, Landscape03Tex, Landscape04Tex, Landscape05Tex, Landscape06Tex, Landscape07Tex,
+	  Landscape08Tex, };
+
+unsigned short* LandscapeIdx[] =
+	{ Landscape01Idx, Landscape02Idx, Landscape03Idx, Landscape04Idx, Landscape05Idx, Landscape06Idx, Landscape07Idx,
+	  Landscape08Idx, };
+
+void VehicleSim::initGroundTerrain(int option)
+{
+	switch (option)
+	{
+	case 0:
+	{
+		btBoxShape* ground = new btBoxShape(btVector3(0.5f * terrainExtent, 0.5f * terrainThickness, 0.5f * terrainExtent));
+		m_collisionShapes.push_back(ground);
+
+		btTransform tr;
+		tr.setIdentity();
+		tr.setOrigin(btVector3(0, -5, 0));
+
+		btRigidBody* groundRigidBody = localCreateRigidBody(0, tr, ground);
+
+		m_guiHelper->createCollisionShapeGraphicsObject(ground);
+
+		m_guiHelper->createCollisionObjectGraphicsObject(groundRigidBody, terrainColor);
+		break;
+	}
+	case 1:
+	{
+		btTransform trans;
+		trans.setIdentity();
+
+		for (int i = 0; i < 8; i++)
+		{
+			btTriangleIndexVertexArray* meshInterface = new btTriangleIndexVertexArray();
+			btIndexedMesh part;
+
+			part.m_vertexBase = (const unsigned char*)LandscapeVtx[i];
+			part.m_vertexStride = sizeof(btScalar) * 3;
+			part.m_numVertices = LandscapeVtxCount[i];
+			part.m_triangleIndexBase = (const unsigned char*)LandscapeIdx[i];
+			part.m_triangleIndexStride = sizeof(short) * 3;
+			part.m_numTriangles = LandscapeIdxCount[i] / 3;
+			part.m_indexType = PHY_SHORT;
+
+			meshInterface->addIndexedMesh(part, PHY_SHORT);
+
+			bool useQuantizedAabbCompression = true;
+			btBvhTriangleMeshShape* triMeshShape = new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression);
+			triMeshShape->setLocalScaling(btVector3(1.0, 0.2, 1.0));
+			btVector3 localInertia(0, 0, 0);
+			trans.setOrigin(btVector3(0, -10, 0));
+
+			btRigidBody* body = localCreateRigidBody(0, trans, triMeshShape);
+			body->setFriction(btScalar(0.9));
+
+			m_guiHelper->createCollisionShapeGraphicsObject(body->getCollisionShape());
+			m_guiHelper->createCollisionObjectGraphicsObject(body, terrainColor);
+		}
+		break;
+	}
+	default:
+		break;
+	}
 }

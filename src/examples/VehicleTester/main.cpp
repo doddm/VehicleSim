@@ -1,9 +1,10 @@
+//
+// Created by Michael Dodd 2022.
+//
+
 #include <iostream>
-//#include "OpenGLWindow/SimpleOpenGL3App.h"
 #include "Utils/b3Clock.h"
-#include "physics/Vehicle.h"
 #include "CommonInterfaces/CommonExampleInterface.h"
-//#include "ExampleBrowser/OpenGLGuiHelper.h"
 #include "VehicleSim.h"
 
 #include "../../../external/bullet/examples/OpenGLWindow/SimpleOpenGL3App.h"
@@ -16,13 +17,12 @@ b3KeyboardCallback prevKeyboardCallback = 0;
 
 void MyKeyboardCallback(int key, int state)
 {
-	//b3Printf("key=%d, state=%d", key, state);
 	bool handled = false;
 
-//	if (!handled && vehicleSim)
-//	{
-//		handled = vehicleSim->keyboardCallback(key, state);
-//	}
+	if (!handled && vehicleSim)
+	{
+		vehicleSim->keyboardCallback(key, state);
+	}
 
 	if (key == B3G_ESCAPE && s_window)
 	{
@@ -35,22 +35,16 @@ void MyKeyboardCallback(int key, int state)
 	}
 }
 
-#include "../../../external/bullet/examples/SharedMemory/SharedMemoryPublic.h"
-
-void OpenGLExampleBrowserVisualizerFlagCallback(int flag, bool enable)
-{
-}
-
 int main(int argc, char* argv[])
 {
-	SimpleOpenGL3App* app = new SimpleOpenGL3App("Vehicle Sim", 1920, 1080, true);
+	SimpleOpenGL3App* app = new SimpleOpenGL3App("Vehicle Simulation", 1920, 1080, true);
+
 	app->m_window->setKeyboardCallback(MyKeyboardCallback);
 	s_window = app->m_window;
 
 	std::cout << "Hello World" << std::endl;
 
 	OpenGLGuiHelper gui(app, false);
-	gui.setVisualizerFlagCallback(OpenGLExampleBrowserVisualizerFlagCallback);
 
 	CommonExampleOptions options(&gui);
 
@@ -72,6 +66,8 @@ int main(int argc, char* argv[])
 	}
 
 	vehicleSim->exitPhysics();
+	delete vehicleSim;
+	delete app;
 
 	return 0;
 }

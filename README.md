@@ -3,9 +3,15 @@
 ### Compiling from source
 #### Requirements
 - CMake version 3.20+
-- C++ compiler
+- C++ compiler (compiles with MSVC or Clang and probably many others)
 
-Unix-like build out of source. From the root directory of the project:
+#### Clone repository
+````bash
+>> git clone --recurse-submodules https://github.com/doddm...
+````
+
+#### Unix 
+Build out of source. From the root directory of the project:
 
 ```bash
 >> mkdir cmake_build
@@ -13,6 +19,8 @@ Unix-like build out of source. From the root directory of the project:
 >> cmake ..
 >> make VehicleSim
 ```
+
+#### Windows
 
 ### Vehicle controls:
 - Accelerate:        Forward cursor 

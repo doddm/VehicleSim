@@ -1,3 +1,7 @@
+//
+// Created by Michael Dodd 2022.
+//
+
 #include "Tire.h"
 
 Tire::Tire(const btVector3& mLocalChassisConnectionPosition,
@@ -7,13 +11,13 @@ Tire::Tire(const btVector3& mLocalChassisConnectionPosition,
 	btScalar mRadius,
 	btScalar mWidth,
 	btScalar mFriction,
-	btScalar mSuspensionStiffness)
+	bool isTireSteerable)
 		: m_localChassisConnectionPosition(mLocalChassisConnectionPosition),
 		  m_localRotationAxis(mLocalRotationAxis),
 		  m_localSuspensionDir(mLocalSuspensionDir),
 		  m_radius(mRadius),
 		  m_width(mWidth),
-		  m_friction(mFriction), m_suspensionLength(mSuspensionLength), m_suspensionStiffness(mSuspensionStiffness)
+		  m_friction(mFriction), m_suspensionLength(mSuspensionLength), isSteerable(isTireSteerable)
 {
 	m_currentRotation = 0;
 }

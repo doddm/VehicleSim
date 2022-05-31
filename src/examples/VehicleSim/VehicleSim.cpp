@@ -124,7 +124,7 @@ class VehicleSim : public CommonExampleInterface
 		return false;
 	}
 
-	virtual bool keyboardCallback(int key, int state);
+	bool keyboardCallback(int key, int state) override;
 
 	virtual void renderScene();
 
@@ -187,15 +187,15 @@ float bodyWidth = 1.9f;
 float bodyHeight = 1.8f;
 float bodyLength = 3.5f;
 
-float gEngineForce = 0.f;
+float currentEngineForce = 0.f;
 
-float defaultBreakingForce = 10.f;
-float maxBreakingForce = 100.f;
-float gBreakingForce = 0.f;
+float defaultBrakingForce = 10.f;
+float maxBrakingForce = 100.f;
+float currentBrakingForce = 0.f;
 
 float maxEngineForce = 1000.f;  //this should be engine/velocity dependent
 
-float gVehicleSteering = 0.f;
+float currentSteeringAngle = 0.f;
 float steeringIncrement = 0.04f;
 float steeringClamp = 0.3f;
 float tireHeight = 0.8f;
@@ -210,7 +210,7 @@ float suspensionCompression = 4.4f;
 float rollInfluence = 0.1f;  //1.0f;
 
 // whether to render the wheels as boxes instead of cylinders
-bool renderWheelsAsBoxes = false;
+bool renderWheelsAsBoxes = true;
 bool useGroundTerrain = true;
 
 btVector4 chassisColor{ 72. / 256., 133. / 256., 237. / 256., 1 };
@@ -400,9 +400,9 @@ void VehicleSim::initGroundTerrain()
 
 		bool useQuantizedAabbCompression = true;
 		btBvhTriangleMeshShape* triMeshShape = new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression);
-		triMeshShape->setLocalScaling(btVector3(1.0, 0.2, 1.0));
+		triMeshShape->setLocalScaling(btVector3(1.0, 0.7, 1.0));
 		btVector3 localInertia(0, 0, 0);
-		trans.setOrigin(btVector3(0, -10, 0));
+		trans.setOrigin(btVector3(0, -35, 0));
 
 		btRigidBody* body = localCreateRigidBody(0, trans, triMeshShape);
 		body->setFriction(btScalar(0.9));
@@ -630,17 +630,17 @@ void VehicleSim::stepSimulation(float deltaTime)
 	{
 		// rear wheels
 		int wheelIndex = 2;
-		m_vehicle->applyEngineForce(gEngineForce, wheelIndex);
-		m_vehicle->setBrake(gBreakingForce, wheelIndex);
+		m_vehicle->applyEngineForce(currentEngineForce, wheelIndex);
+		m_vehicle->setBrake(currentBrakingForce, wheelIndex);
 		wheelIndex = 3;
-		m_vehicle->applyEngineForce(gEngineForce, wheelIndex);
-		m_vehicle->setBrake(gBreakingForce, wheelIndex);
+		m_vehicle->applyEngineForce(currentEngineForce, wheelIndex);
+		m_vehicle->setBrake(currentBrakingForce, wheelIndex);
 
 		// front wheels
 		wheelIndex = 0;
-		m_vehicle->setSteeringValue(gVehicleSteering, wheelIndex);
+		m_vehicle->setSteeringValue(currentSteeringAngle, wheelIndex);
 		wheelIndex = 1;
-		m_vehicle->setSteeringValue(gVehicleSteering, wheelIndex);
+		m_vehicle->setSteeringValue(currentSteeringAngle, wheelIndex);
 	}
 
 	float dt = deltaTime;
@@ -704,9 +704,9 @@ void VehicleSim::clientResetScene()
 
 void VehicleSim::resetVehicle()
 {
-	gVehicleSteering = 0.f;
-	gBreakingForce = defaultBreakingForce;
-	gEngineForce = 0.f;
+	currentSteeringAngle = 0.f;
+	currentBrakingForce = defaultBrakingForce;
+	currentEngineForce = 0.f;
 
 	m_carChassis->setCenterOfMassTransform(btTransform::getIdentity());
 	m_carChassis->setLinearVelocity(btVector3(0, 0, 0));
@@ -744,35 +744,35 @@ bool VehicleSim::keyboardCallback(int key, int state)
 			case B3G_LEFT_ARROW:
 			{
 				handled = true;
-				gVehicleSteering += steeringIncrement;
-				gVehicleSteering = steeringClamp;
-				if (gVehicleSteering > steeringClamp)
-					gVehicleSteering = steeringClamp;
+				currentSteeringAngle += steeringIncrement;
+				currentSteeringAngle = steeringClamp;
+				if (currentSteeringAngle > steeringClamp)
+					currentSteeringAngle = steeringClamp;
 
 				break;
 			}
 			case B3G_RIGHT_ARROW:
 			{
 				handled = true;
-				gVehicleSteering -= steeringIncrement;
-				gVehicleSteering = -steeringClamp;
-				if (gVehicleSteering < -steeringClamp)
-					gVehicleSteering = -steeringClamp;
+				currentSteeringAngle -= steeringIncrement;
+				currentSteeringAngle = -steeringClamp;
+				if (currentSteeringAngle < -steeringClamp)
+					currentSteeringAngle = -steeringClamp;
 
 				break;
 			}
 			case B3G_UP_ARROW:
 			{
 				handled = true;
-				gEngineForce = maxEngineForce;
-				gBreakingForce = 0.f;
+				currentEngineForce = maxEngineForce;
+				currentBrakingForce = 0.f;
 				break;
 			}
 			case B3G_DOWN_ARROW:
 			{
 				handled = true;
-				gEngineForce = 0.;
-				gBreakingForce = maxBreakingForce;
+				currentEngineForce = 0.;
+				currentBrakingForce = maxBrakingForce;
 				break;
 			}
 
@@ -824,22 +824,22 @@ bool VehicleSim::keyboardCallback(int key, int state)
 		{
 		case B3G_UP_ARROW:
 		{
-			gEngineForce = 0.f;
-			gBreakingForce = defaultBreakingForce;
+			currentEngineForce = 0.f;
+			currentBrakingForce = defaultBrakingForce;
 			handled = true;
 			break;
 		}
 		case B3G_DOWN_ARROW:
 		{
-			gEngineForce = 0.f;
-			gBreakingForce = defaultBreakingForce;
+			currentEngineForce = 0.f;
+			currentBrakingForce = defaultBrakingForce;
 			handled = true;
 			break;
 		}
 		case B3G_LEFT_ARROW:
 		case B3G_RIGHT_ARROW:
 		{
-			gVehicleSteering = 0.f;
+			currentSteeringAngle = 0.f;
 			handled = true;
 			break;
 		}

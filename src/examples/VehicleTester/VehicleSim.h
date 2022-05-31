@@ -1,5 +1,5 @@
 //
-// Created by mchld on 5/25/2022.
+// Created by Michael Dodd 2022.
 //
 
 #ifndef BULLETGAME_VEHICLESIM_H
@@ -60,7 +60,7 @@ public:
 	btRigidBody* localCreateRigidBody(btScalar mass, const btTransform& worldTransform, btCollisionShape* colSape);
 
 private:
-	void initGroundTerrain();
+	void initGroundTerrain(int option);
 	void createVehicle();
 	void addTiresToVehicle();
 };
