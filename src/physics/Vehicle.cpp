@@ -298,7 +298,7 @@ bool Vehicle::castRay(Tire& tire)
 		tire.m_localVelocity = normalVelocity;
 
 
-		// TODO figure out why this works but the above is unstable
+		// TODO figure out why this bit from btvehicle works but the above is unstable
 		btScalar denominator = tire.m_groundNormal.dot(tire.m_suspensionDir);
 
 		btVector3 chassis_velocity_at_contactPoint;
@@ -308,17 +308,8 @@ bool Vehicle::castRay(Tire& tire)
 
 		btScalar projVel = tire.m_groundNormal.dot(chassis_velocity_at_contactPoint);
 
-//		if (denominator >= btScalar(-0.1))
-//		{
-//			wheel.m_suspensionRelativeVelocity = btScalar(0.0);
-//			wheel.m_clippedInvContactDotSuspension = btScalar(1.0) / btScalar(0.1);
-//		}
-//		else
-//		{
 		btScalar inv = btScalar(-1.) / denominator;
 		tire.m_localVelocity = projVel * inv;
-//			wheel.m_clippedInvContactDotSuspension = inv;
-//		}
 
 		return true;
 	}
