@@ -40,6 +40,7 @@ class Vehicle : public btActionInterface
 	}
 
 	void debugDraw(btIDebugDraw* debugDrawer) override;
+	void setTireFrictionActive(bool isActive);
 
 private:
 	Raycast* m_raycast;
@@ -47,6 +48,7 @@ private:
 	btAlignedObjectArray<Tire> m_tires;
 	btScalar m_suspensionStiffness;
 	btScalar m_suspensionDamping;
+	bool m_isTireFrictionActive;
 };
 
 #endif // BULLETGAME_VEHICLE_H

@@ -5,7 +5,6 @@ SET(BULLET_PHYSICS_ROOT ../../../external/bullet)
 SET(BULLET_PHYSICS_EXAMPLES ../../../external/bullet/examples)
 SET(PROJECT_ROOT ../..)
 
-
 INCLUDE_DIRECTORIES(
         ${BULLET_PHYSICS_ROOT}/src
         ${BULLET_PHYSICS_ROOT}/btgui

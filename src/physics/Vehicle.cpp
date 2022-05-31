@@ -1,5 +1,5 @@
 #include "Vehicle.h"
-#include "util/DebugUtil.h"
+#include "../util/DebugUtil.h"
 
 Vehicle::Vehicle(btRigidBody* pBody, Raycast* pRaycast)
 {
@@ -18,7 +18,10 @@ void Vehicle::update(btScalar step)
 
 	updateSuspension(step);
 
-	updateTireFriction(step);
+	if(m_isTireFrictionActive)
+	{
+		updateTireFriction(step);
+	}
 
 	for (int i = 0; i < m_numWheels; i++)
 	{
@@ -207,31 +210,58 @@ void Vehicle::debugDraw(btIDebugDraw* debugDrawer)
 
 void Vehicle::setBrake(btScalar brakeForce)
 {
-	for (int i = 0; i < m_numWheels; i++)
+	if(m_isTireFrictionActive)
 	{
-		m_tires[i].m_brakeTorque = brakeForce;
+		for (int i = 0; i < m_numWheels; i++)
+		{
+			m_tires[i].m_brakeTorque = brakeForce;
+		}
+	}
+	else
+	{
+		btMatrix3x3 vehicleBasis = m_chassisRigidBody->getWorldTransform().getBasis();
+		btVector3 backwardWorld = -btVector3(vehicleBasis[0][2], vehicleBasis[1][2], vehicleBasis[2][2]);
+		m_chassisRigidBody->applyCentralForce(backwardWorld * brakeForce);
 	}
 }
 
 void Vehicle::setSteering(btScalar angle)
 {
-	for (int i = 0; i < m_numWheels; i++)
+	if(m_isTireFrictionActive)
 	{
-		if (m_tires[i].isSteerable)
+		for (int i = 0; i < m_numWheels; i++)
 		{
-			m_tires[i].m_steeringAngle = angle;
+			if (m_tires[i].isSteerable)
+			{
+				m_tires[i].m_steeringAngle = angle;
+			}
 		}
+	}
+	else
+	{
+		btMatrix3x3 vehicleBasis = m_chassisRigidBody->getWorldTransform().getBasis();
+		btVector3 upWorld = -btVector3(vehicleBasis[0][1], vehicleBasis[1][1], vehicleBasis[2][1]);
+		m_chassisRigidBody->applyTorque(-1000 * upWorld * angle);
 	}
 }
 
 void Vehicle::setAccelerator(btScalar engineForce)
 {
-	for (int i = 0; i < m_numWheels; i++)
+	if(m_isTireFrictionActive)
 	{
-		if (!m_tires[i].isSteerable)
+		for (int i = 0; i < m_numWheels; i++)
 		{
-			m_tires[i].m_engineTorque = engineForce;
+			if (!m_tires[i].isSteerable)
+			{
+				m_tires[i].m_engineTorque = engineForce;
+			}
 		}
+	}
+	else
+	{
+		btMatrix3x3 vehicleBasis = m_chassisRigidBody->getWorldTransform().getBasis();
+		btVector3 forwardWorld = btVector3(vehicleBasis[0][2], vehicleBasis[1][2], vehicleBasis[2][2]);
+		m_chassisRigidBody->applyCentralForce(forwardWorld * engineForce);
 	}
 }
 
@@ -302,15 +332,12 @@ void Vehicle::setSuspensionStiffness(btScalar stiffness)
 {
 	m_suspensionStiffness = stiffness;
 }
-btScalar Vehicle::getSuspensionStiffness()
-{
-	return m_suspensionStiffness;
-}
+
 void Vehicle::setSuspensionDamping(btScalar damping)
 {
 	m_suspensionDamping = damping;
 }
-btScalar Vehicle::getSuspensionDamping()
+void Vehicle::setTireFrictionActive(bool isActive)
 {
-	return m_suspensionDamping;
+	m_isTireFrictionActive = isActive;
 }

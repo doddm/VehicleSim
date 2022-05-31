@@ -1,9 +1,68 @@
-add_executable(${PROJECT_NAME} main.cpp util/DebugUtil.h)
+cmake_minimum_required(VERSION 3.13)
+project(VehicleSimMain)
 
-add_subdirectory(examples)
-add_subdirectory(input)
-add_subdirectory(graphics)
-add_subdirectory(physics)
+SET(BULLET_PHYSICS_ROOT ../external/bullet)
+SET(BULLET_PHYSICS_EXAMPLES ../external/bullet/examples)
+SET(PROJECT_ROOT ../..)
+
+
+INCLUDE_DIRECTORIES(
+        ${BULLET_PHYSICS_ROOT}/src
+        ${BULLET_PHYSICS_ROOT}/btgui
+        ${BULLET_PHYSICS_ROOT}/examples
+        ${BULLET_PHYSICS_ROOT}/examples/ThirdPartyLibs/glad
+        ${PROJECT_ROOT}
+)
+
+
+SET(VehicleTester_SRCS
+        main.cpp
+        graphics/OpenGLGuiHelper.cpp
+        physics/Vehicle.cpp
+        physics/Vehicle.h
+        physics/Tire.cpp
+        physics/Tire.h
+        physics/Raycast.h
+        physics/Raycast.cpp
+        util/DebugUtil.h
+        ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/GL_ShapeDrawer.cpp
+        ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/CollisionShape2TriangleMesh.cpp
+        ${BULLET_PHYSICS_EXAMPLES}/Utils/b3Clock.cpp
+        VehicleSim.cpp VehicleSim.h)
+
+LINK_LIBRARIES(
+        BulletDynamics BulletCollision LinearMath OpenGLWindow Bullet3Common 
+)
+
+#some code to support OpenGL and Glew cross platform
+IF (WIN32)
+    INCLUDE_DIRECTORIES(
+            ${BULLET_PHYSICS_ROOT}/btgui/OpenGLWindow/GlewWindows
+    )
+    ADD_DEFINITIONS(-DGLEW_STATIC)
+    LINK_LIBRARIES( ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} )
+ELSE(WIN32)
+    IF(APPLE)
+        find_library(COCOA NAMES Cocoa)
+        MESSAGE(${COCOA})
+        link_libraries(${COCOA} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
+
+    ELSE(APPLE)
+        INCLUDE_DIRECTORIES(
+                ${BULLET_PHYSICS_ROOT}/btgui/OpenGLWindow/GlewWindows
+        )
+        ADD_DEFINITIONS("-DGLEW_INIT_OPENGL11_FUNCTIONS=1")
+        ADD_DEFINITIONS("-DGLEW_STATIC")
+        ADD_DEFINITIONS("-DGLEW_DYNAMIC_LOAD_ALL_GLX_FUNCTIONS=1")
+
+        FIND_PACKAGE(Threads)
+        LINK_LIBRARIES( ${CMAKE_THREAD_LIBS_INIT} ${DL} )
+    ENDIF(APPLE)
+ENDIF(WIN32)
+
+ADD_EXECUTABLE(${PROJECT_NAME}
+                ${VehicleTester_SRCS}
+)
 
 if(MSVC)
     if (NOT USE_MSVC_RUNTIME_LIBRARY_DLL)
