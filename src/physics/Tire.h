@@ -33,7 +33,7 @@ struct Tire
 	btVector3 m_localSuspensionDir;
 	/// tire axle in local space
 	btVector3 m_localRotationAxis;
-	/// the velocity of the tire
+	/// the velocity of the tire in local space [m/s]
 	btScalar m_localVelocity;
 
 	/// position where the tire is contacting the ground in world space
@@ -43,11 +43,13 @@ struct Tire
 
 	/// current rotation angle of the tire (only used for tire animation -- no physics yet TODO)
 	btScalar m_currentRotation{};
+	btScalar m_deltaRotation{};
 
 	btScalar m_radius{};
 	btScalar m_width{};
 	btScalar m_friction{};
 	btScalar m_currentSuspensionLength{};
+	btScalar m_suspensionForce{};
 	btScalar m_engineTorque{};
 	btScalar m_brakeTorque{};
 

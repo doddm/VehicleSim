@@ -30,23 +30,20 @@ float currentEngineForce = 0.f;
 
 float steeringIncrement = 0.04f;
 float wheelBaseFront = 2.1f;
-float wheelBaseRear = wheelBaseFront;
 float wheelFriction = 100;
 float suspensionStiffness = 20.f;
 float suspensionDamping = 3.0f;
-float suspensionCompression = 4.4f;
 float suspensionLength = 0.6;
-float rollInfluence = 0.1f;
 
 ///(0 - plane, 1 - hills)
-int terrainType = 0;
+int terrainType = 1;
 
 /// unit vector of suspension travel.
 btVector3 tireSuspensionDirLocal(0, -1, 0);
 /// unit vector indicating the direction of the tire axle
 btVector3 tireAxleDirLocal(-1, 0, 0);
 
-bool renderWheelsAsBoxes = false;
+bool renderWheelsAsBoxes = true;
 
 VehicleSim::VehicleSim(struct GUIHelperInterface* helper) : m_guiHelper(helper)
 {
@@ -233,7 +230,6 @@ void VehicleSim::exitPhysics()
 	}
 	m_collisionShapes.clear();
 
-	// delete dynamics world
 	delete m_dynamicsWorld;
 	m_dynamicsWorld = nullptr;
 
@@ -246,15 +242,12 @@ void VehicleSim::exitPhysics()
 	delete m_tireShape;
 	m_tireShape = nullptr;
 
-	// delete solver
 	delete m_constraintSolver;
 	m_constraintSolver = nullptr;
 
-	// delete broadphase
 	delete m_overlappingPairCache;
 	m_overlappingPairCache = nullptr;
 
-	// delete dispatcher
 	delete m_dispatcher;
 	m_dispatcher = nullptr;
 
@@ -272,6 +265,11 @@ void VehicleSim::stepSimulation(float deltaTime)
 	{
 		int maxSimSubSteps = 2;
 		m_dynamicsWorld->stepSimulation(deltaTime, maxSimSubSteps);
+
+		if(m_vehicleChassis->getCenterOfMassPosition().y() < -20)
+		{
+			resetVehicle(btVector3(0, 0, 0));
+		}
 	}
 }
 
@@ -280,9 +278,9 @@ void VehicleSim::renderScene()
 	btVector3 vehiclePosition = m_vehicle->getChassisWorldTransform().getOrigin();
 	setCameraTargetPosition(vehiclePosition.x(), vehiclePosition.y(), vehiclePosition.z());
 
+	/// update wheel visuals
 	for (int i = 0; i < m_vehicle->getNumTires(); i++)
 	{
-		// synchronize the wheels with the (interpolated) chassis worldtransform
 		m_vehicle->setTireWorldTransform(i);
 
 		CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
@@ -529,4 +527,14 @@ void VehicleSim::setCameraTargetPosition(float x, float y, float z)
 	CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
 	CommonCameraInterface* camera = renderer->getActiveCamera();
 	camera->setCameraTargetPosition(x, y, z);
+}
+
+void VehicleSim::resetVehicle(btVector3 position)
+{
+	btTransform tr;
+	tr.setIdentity();
+	tr.setOrigin(position);
+	m_vehicleChassis->setCenterOfMassTransform(tr);
+	m_vehicleChassis->setAngularVelocity(btVector3(0,0,0));
+	m_vehicleChassis->setLinearVelocity(btVector3(0,0,0));
 }

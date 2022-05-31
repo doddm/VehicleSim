@@ -8,7 +8,7 @@
 class Vehicle : public btActionInterface
 {
  public:
-	const int numWheels = 4;
+	const int m_numWheels = 4;
 
 	explicit Vehicle(btRigidBody* pBody, Raycast* pRaycast);
 	void update(btScalar step);
@@ -24,14 +24,11 @@ class Vehicle : public btActionInterface
 	void setTireWorldTransform(int tireIndex);
 	// TODO move this and the Raycast member to the Tire class
 	bool castRay(Tire& tire);
-	void setTireTorque();
 	void setBrake(btScalar brakeForce);
 	void setAccelerator(btScalar engineForce);
 	void setSteering(btScalar angle);
 	void setSuspensionStiffness(btScalar stiffness);
-	btScalar getSuspensionStiffness();
 	void setSuspensionDamping(btScalar damping);
-	btScalar getSuspensionDamping();
 
 	~Vehicle() override;
 

@@ -4,7 +4,6 @@
 Raycast::Raycast(btDynamicsWorld *dynamicsWorld)
     : m_dynamicsWorld(dynamicsWorld) {}
 
-// TODO change "to" parameter to be a "direction" and "length"
 bool Raycast::castRay(btVector3 from, btVector3 to, RaycastHit &hitInfo) const
 {
   btCollisionWorld::ClosestRayResultCallback rayCallback(from, to);

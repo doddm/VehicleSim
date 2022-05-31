@@ -60,6 +60,7 @@ private:
 	void createVehicle();
 	void addTiresToVehicle();
 	void setCameraTargetPosition(float x, float y, float z);
+	void resetVehicle(btVector3 position);
 };
 
 #endif //BULLETGAME_VEHICLESIM_H
