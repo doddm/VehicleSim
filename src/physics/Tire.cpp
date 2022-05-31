@@ -1,7 +1,3 @@
-//
-// Created by Michael Dodd 2022.
-//
-
 #include "Tire.h"
 
 Tire::Tire(const btVector3& mLocalChassisConnectionPosition,

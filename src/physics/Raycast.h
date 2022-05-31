@@ -1,7 +1,3 @@
-//
-// Created by Michael Dodd 2022.
-//
-
 #ifndef BULLETGAME_RAYCAST_H
 #define BULLETGAME_RAYCAST_H
 

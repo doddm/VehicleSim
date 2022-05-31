@@ -1,7 +1,3 @@
-//
-// Created by Michael Dodd 2022.
-//
-
 #ifndef BULLETGAME_VEHICLE_H
 #define BULLETGAME_VEHICLE_H
 

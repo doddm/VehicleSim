@@ -1,6 +1,4 @@
-//
-// Created by Michael Dodd 2022.
-//
+// Adapted from Demos in Bullet Physics SDK https://bulletphysics.org
 
 #include "VehicleSim.h"
 #include "btBulletDynamicsCommon.h"
@@ -11,16 +9,13 @@
 
 float gravity = 9.81;
 
-/// terrain dimensions [m]
 float terrainExtent = 100;
 float terrainThickness = 10;
 
-/// vehicle body dimensions [m]
 float bodyWidth = 1.9f;
 float bodyHeight = 1.8f;
 float bodyLength = 3.5f;
 
-/// tire dimensions [m]
 float tireHeight = 0.8f;
 float tireRadius = 0.35f;
 float tireWidth = 0.3f;
@@ -43,12 +38,14 @@ float suspensionCompression = 4.4f;
 float suspensionLength = 0.6;
 float rollInfluence = 0.1f;
 
+///(0 - plane, 1 - hills)
+int terrainType = 0;
+
 /// unit vector of suspension travel.
 btVector3 tireSuspensionDirLocal(0, -1, 0);
-/// unit vector indicating the direction of the axle
+/// unit vector indicating the direction of the tire axle
 btVector3 tireAxleDirLocal(-1, 0, 0);
 
-/// whether to render the wheels as boxes instead of cylinders
 bool renderWheelsAsBoxes = false;
 
 VehicleSim::VehicleSim(struct GUIHelperInterface* helper) : m_guiHelper(helper)
@@ -62,8 +59,6 @@ void VehicleSim::initPhysics()
 	/// set y-up coordinate system for GUI to match physics
 	m_guiHelper->setUpAxis(1);
 
-	/// collision configuration contains default setup for memory, collision
-	/// setup.
 	m_collisionConfiguration = new btDefaultCollisionConfiguration();
 
 	/// use the default collision dispatcher.
@@ -85,7 +80,7 @@ void VehicleSim::initPhysics()
 
 	m_dynamicsWorld->setGravity(btVector3(0, -gravity, 0));
 
-	initGroundTerrain(1);
+	initGroundTerrain(terrainType);
 
 	/// Chassis coordinate system
 	/// +x - left
@@ -99,8 +94,7 @@ void VehicleSim::initPhysics()
 	btTransform localTrans;
 	localTrans.setIdentity();
 
-	// localTrans effectively shifts the center of mass with respect to the
-	// chassis
+	// localTrans effectively shifts the center of mass with respect to the chassis
 	localTrans.setOrigin(btVector3(0, bodyHeight, 0));
 
 	compound->addChildShape(localTrans, chassisShape);
@@ -109,7 +103,6 @@ void VehicleSim::initPhysics()
 	tr.setIdentity();
 	tr.setOrigin(btVector3(0, 0, 0));
 
-	// vehicle mass [kg]
 	float vehicleMass = 700.0f;
 	m_vehicleChassis = localCreateRigidBody(vehicleMass, tr, compound); // chassisShape);
 
@@ -151,8 +144,7 @@ void VehicleSim::createVehicle()
 	/// never deactivate the vehicle
 	m_vehicleChassis->setActivationState(DISABLE_DEACTIVATION);
 
-	/// Add the vehicle implementation of the Action Interface to the physics
-	/// pipeline
+	/// Add the vehicle implementation of the Action Interface to the physics pipeline
 	m_dynamicsWorld->addAction(m_vehicle);
 
 	/// configure vehicle suspension
@@ -285,8 +277,8 @@ void VehicleSim::stepSimulation(float deltaTime)
 
 void VehicleSim::renderScene()
 {
-	m_guiHelper->syncPhysicsToGraphics(m_dynamicsWorld);
-	m_guiHelper->render(m_dynamicsWorld);
+	btVector3 vehiclePosition = m_vehicle->getChassisWorldTransform().getOrigin();
+	setCameraTargetPosition(vehiclePosition.x(), vehiclePosition.y(), vehiclePosition.z());
 
 	for (int i = 0; i < m_vehicle->getNumTires(); i++)
 	{
@@ -298,7 +290,6 @@ void VehicleSim::renderScene()
 		{
 			btTransform tr = m_vehicle->getTire(i).m_worldTransform;
 			btVector3 pos = tr.getOrigin();
-			//			std::cout << pos.length() << std::endl;
 			btQuaternion orn = tr.getRotation();
 			renderer->writeSingleInstanceTransformToCPU(pos, orn, m_tireRenderInstances[i]);
 		}
@@ -399,7 +390,7 @@ bool VehicleSim::keyboardCallback(int key, int state)
 		case B3G_LEFT_ARROW:
 		case B3G_RIGHT_ARROW:
 		{
-//			currentSteeringAngle = 0.f;
+			currentSteeringAngle = 0.f;
 			handled = true;
 			break;
 		}
@@ -518,7 +509,6 @@ void VehicleSim::initGroundTerrain(int option)
 			bool useQuantizedAabbCompression = true;
 			btBvhTriangleMeshShape* triMeshShape = new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression);
 			triMeshShape->setLocalScaling(btVector3(1.0, 0.2, 1.0));
-			btVector3 localInertia(0, 0, 0);
 			trans.setOrigin(btVector3(0, -10, 0));
 
 			btRigidBody* body = localCreateRigidBody(0, trans, triMeshShape);
@@ -532,4 +522,11 @@ void VehicleSim::initGroundTerrain(int option)
 	default:
 		break;
 	}
+}
+
+void VehicleSim::setCameraTargetPosition(float x, float y, float z)
+{
+	CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
+	CommonCameraInterface* camera = renderer->getActiveCamera();
+	camera->setCameraTargetPosition(x, y, z);
 }

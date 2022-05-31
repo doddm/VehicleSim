@@ -1,7 +1,3 @@
-//
-// Created by Michael Dodd 2022.
-//
-
 #ifndef BULLETGAME_SRC_PHYSICS_TIRE_H_
 #define BULLETGAME_SRC_PHYSICS_TIRE_H_
 

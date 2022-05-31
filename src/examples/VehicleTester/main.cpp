@@ -1,7 +1,3 @@
-//
-// Created by Michael Dodd 2022.
-//
-
 #include <iostream>
 #include "Utils/b3Clock.h"
 #include "CommonInterfaces/CommonExampleInterface.h"

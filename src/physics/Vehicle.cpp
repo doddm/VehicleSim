@@ -1,7 +1,3 @@
-//
-// Created by Michael Dodd 2022.
-//
-
 #include "Vehicle.h"
 #include "util/DebugUtil.h"
 
@@ -22,8 +18,18 @@ void Vehicle::update(btScalar step)
 
 	updateSuspension(step);
 
+	updateTireFriction(step);
+}
+
+void Vehicle::updateTireFriction(btScalar step)
+{
 	for(int i = 0; i < numWheels; i++)
 	{
+		if(!m_tires[i].m_isContactingGround)
+		{
+			break;
+		}
+
 		btVector3 groundContactPosition = m_tires[i].m_groundContactPosition;
 		btVector3 slipVelocity = m_chassisRigidBody->getVelocityInLocalPoint(groundContactPosition);
 		btVector3 tireAxleDirection = m_tires[i].m_rotationAxis;
@@ -32,16 +38,45 @@ void Vehicle::update(btScalar step)
 		btVector3 groundNormal(0, 1, 0);
 		btVector3 tireForward = -tireAxleDirection.cross(groundNormal);
 
-		DebugUtil::printVector3(tireForward, "forward vector ");
-		DebugUtil::printVector3(slipVelocity, "slip velocity ");
+		btMatrix3x3 tireBasisWorld = m_tires[i].m_worldTransform.getBasis();
+		tireForward = btVector3(
+			tireBasisWorld[0][2],
+			tireBasisWorld[1][2],
+			tireBasisWorld[2][2]);
 
+		btMatrix3x3 tireAxelWorld = m_tires[i].m_worldTransform.getBasis();
+		tireAxleDirection = btVector3(
+			tireBasisWorld[0][0],
+			tireBasisWorld[1][0],
+			tireBasisWorld[2][0]);
+
+		btVector3 relativePosition = m_tires[i].m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
+
+		float impulseMulti = 10;
+
+		btScalar forwardImpulseMag = tireForward.dot(-slipVelocity);
+		forwardImpulseMag *= impulseMulti;
+		forwardImpulseMag = 0;
+		btVector3 forwardImpulse = forwardImpulseMag * tireForward.normalize();
+
+		btScalar slipImpulseMag = tireAxleDirection.dot(-slipVelocity);
+		slipImpulseMag *= impulseMulti;
+		btVector3 slipImpulse = slipImpulseMag * tireAxleDirection.normalize();
+
+		m_chassisRigidBody->applyImpulse(forwardImpulse, relativePosition);
+		m_chassisRigidBody->applyImpulse(slipImpulse, relativePosition);
+
+//		DebugUtil::printVector3(tireForward, "forward vector ");
+//		DebugUtil::printVector3(slipVelocity, "slip velocity ");
+
+
+
+		if(m_tires[i].isSteerable)
+		{
+//			DebugUtil::printVector3(tireForwardWS, "Tire forward WS ");
+			DebugUtil::printVector3(tireForward, "Tire forward Local? ");
+		}
 	}
-
-}
-
-void Vehicle::updateTireFriction(btScalar step)
-{
-
 }
 void Vehicle::updateSuspension(btScalar step)
 {

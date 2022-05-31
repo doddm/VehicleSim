@@ -1,7 +1,3 @@
-//
-// Created by Michael Dodd 2022.
-//
-
 #ifndef BULLETGAME_VEHICLESIM_H
 #define BULLETGAME_VEHICLESIM_H
 
@@ -63,6 +59,7 @@ private:
 	void initGroundTerrain(int option);
 	void createVehicle();
 	void addTiresToVehicle();
+	void setCameraTargetPosition(float x, float y, float z);
 };
 
 #endif //BULLETGAME_VEHICLESIM_H

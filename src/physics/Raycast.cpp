@@ -1,7 +1,3 @@
-//
-// Created by Michael Dodd 2022.
-//
-
 #include <iostream>
 #include "Raycast.h"
 
