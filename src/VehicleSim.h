@@ -47,6 +47,7 @@ public:
 	void exitPhysics() override;
 	void stepSimulation(float deltaTime) override;
 	void renderScene() override;
+	void updateGraphics() override;
 	void physicsDebugDraw(int debugFlags) override;
 	void resetCamera() override;
 	bool mouseMoveCallback(float x, float y) override;

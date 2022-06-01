@@ -25,7 +25,7 @@ float defaultSteeringAngle = 0.3f;
 float defaultBrakingForce = 10.f;
 float maxBrakingForce = 1000.f;
 float currentBrakingForce = 0.f;
-float maxEngineForce = 1000.f;
+float maxEngineForce = 5000.f;
 float currentEngineForce = 0.f;
 
 float steeringIncrement = 0.04f;
@@ -279,14 +279,9 @@ void VehicleSim::stepSimulation(float deltaTime)
 
 void VehicleSim::renderScene()
 {
-	btVector3 vehiclePosition = m_vehicle->getChassisWorldTransform().getOrigin();
-	setCameraTargetPosition(vehiclePosition.x(), vehiclePosition.y(), vehiclePosition.z());
-
 	/// update wheel visuals
 	for (int i = 0; i < m_vehicle->getNumTires(); i++)
 	{
-		m_vehicle->setTireWorldTransform(i);
-
 		CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
 		if (renderer)
 		{
@@ -303,6 +298,11 @@ void VehicleSim::renderScene()
 
 void VehicleSim::physicsDebugDraw(int debugFlags)
 {
+	if (m_dynamicsWorld && m_dynamicsWorld->getDebugDrawer())
+	{
+		m_dynamicsWorld->getDebugDrawer()->setDebugMode(debugFlags);
+		m_dynamicsWorld->debugDrawWorld();
+	}
 }
 
 bool VehicleSim::mouseMoveCallback(float x, float y)
@@ -541,4 +541,10 @@ void VehicleSim::resetVehicle(btVector3 position)
 	m_vehicleChassis->setCenterOfMassTransform(tr);
 	m_vehicleChassis->setAngularVelocity(btVector3(0,0,0));
 	m_vehicleChassis->setLinearVelocity(btVector3(0,0,0));
+}
+void VehicleSim::updateGraphics()
+{
+	CommonExampleInterface::updateGraphics();
+	btVector3 vehiclePosition = m_vehicle->getChassisWorldTransform().getOrigin();
+	setCameraTargetPosition(vehiclePosition.x(), vehiclePosition.y(), vehiclePosition.z());
 }

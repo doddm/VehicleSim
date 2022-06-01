@@ -21,7 +21,7 @@ class Vehicle : public btActionInterface
 	int getNumTires() const;
 	const Tire& getTire(int tireIndex) const;
 	void updateTireWorldPositionRotation(Tire& tire);
-	void setTireWorldTransform(int tireIndex);
+	void updateTireWorldTransform(int tireIndex);
 	// TODO move this and the Raycast member to the Tire class
 	bool castRay(Tire& tire);
 	void setBrake(btScalar brakeForce);

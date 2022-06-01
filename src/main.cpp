@@ -4,10 +4,17 @@
 #include "VehicleSim.h"
 
 #include "../external/bullet/examples/OpenGLWindow/SimpleOpenGL3App.h"
+#include "../external/bullet/examples/OpenGLWindow/OpenGLInclude.h"
+
 #include "graphics/OpenGLGuiHelper.h"
+#include "util/DebugUtil.h"
 
 static CommonWindowInterface* s_window = 0;
 CommonExampleInterface* vehicleSim;
+
+static bool renderVisualGeometry = true;
+bool visualWireframe = false;
+int gDebugDrawFlags = 0;
 
 b3KeyboardCallback prevKeyboardCallback = 0;
 
@@ -18,6 +25,12 @@ void MyKeyboardCallback(int key, int state)
 	if (!handled && vehicleSim)
 	{
 		vehicleSim->keyboardCallback(key, state);
+	}
+
+	if (key == 'w' && state)
+	{
+		visualWireframe = !visualWireframe;
+		gDebugDrawFlags ^= btIDebugDraw::DBG_DrawWireframe;
 	}
 
 	if (key == B3G_ESCAPE && s_window)
@@ -56,7 +69,22 @@ int main(int argc, char* argv[])
 		app->m_instancingRenderer->updateCamera(app->getUpAxis());
 
 		vehicleSim->stepSimulation(0.1);
-		vehicleSim->renderScene();
+		// this updates the camera target position to track the vehicle
+		vehicleSim->updateGraphics();
+
+		if (renderVisualGeometry && ((gDebugDrawFlags & btIDebugDraw::DBG_DrawWireframe) == 0))
+		{
+			if (visualWireframe)
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			}
+			vehicleSim->renderScene();
+		}
+		else
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			vehicleSim->physicsDebugDraw(gDebugDrawFlags);
+		}
 
 		app->swapBuffer();
 	}

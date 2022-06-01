@@ -13,12 +13,14 @@ void Vehicle::update(btScalar step)
 	for (int i = 0; i < m_numWheels; i++)
 	{
 		updateTireWorldPositionRotation(m_tires[i]);
+		updateTireWorldTransform(i);
+
 		castRay(m_tires[i]);
 	}
 
 	updateSuspension(step);
 
-	if(m_isTireFrictionActive)
+	if (m_isTireFrictionActive)
 	{
 		updateTireFriction(step);
 	}
@@ -153,7 +155,7 @@ Tire& Vehicle::addTire(const btVector3& position,
 	Tire tireToAdd(position, rotationAxis, suspensionDir, suspensionLength, radius, width, friction, isSteerable);
 	m_tires.push_back(tireToAdd);
 	updateTireWorldPositionRotation(tireToAdd);
-	setTireWorldTransform(getNumTires() - 1);
+	updateTireWorldTransform(getNumTires() - 1);
 	return tireToAdd;
 }
 
@@ -171,7 +173,7 @@ void Vehicle::updateTireWorldPositionRotation(Tire& tire)
 	return;
 }
 
-void Vehicle::setTireWorldTransform(int tireIndex)
+void Vehicle::updateTireWorldTransform(int tireIndex)
 {
 	Tire& tire = m_tires[tireIndex];
 	updateTireWorldPositionRotation(tire);
@@ -200,17 +202,40 @@ void Vehicle::setTireWorldTransform(int tireIndex)
 	tirePrincipalAxes[2][2] = fwd[2];
 
 	tire.m_worldTransform.setBasis(steeringRotationMatrix * tireRotationMatrix * tirePrincipalAxes);
-	tire.m_worldTransform
-		.setOrigin(tire.m_ChassisConnectionPosition + tire.m_suspensionDir * tire.m_currentSuspensionLength);
+	tire.m_worldTransform.setOrigin(tire.m_ChassisConnectionPosition + tire.m_suspensionDir * tire.m_currentSuspensionLength);
 }
 
 void Vehicle::debugDraw(btIDebugDraw* debugDrawer)
 {
+	for (int v = 0; v < 4; v++)
+	{
+		btVector3 rayColor;
+		if (m_tires[v].m_isContactingGround)
+		{
+			rayColor.setValue(0, 0, 1);
+		}
+		else
+		{
+			rayColor.setValue(1, 0, 0);
+		}
+
+		btVector3 wheelPosWS = m_tires[v].m_worldTransform.getOrigin();
+
+		btVector3 axle = btVector3(
+			m_tires[v].m_worldTransform.getBasis()[0][0],
+			m_tires[v].m_worldTransform.getBasis()[1][0],
+			m_tires[v].m_worldTransform.getBasis()[2][0]);
+
+		// draw wheel axle as line
+		debugDrawer->drawLine(wheelPosWS, wheelPosWS + axle, rayColor);
+		// draw line from wheel to ground contact position
+		debugDrawer->drawLine(wheelPosWS, m_tires[v].m_groundContactPosition, rayColor);
+	}
 }
 
 void Vehicle::setBrake(btScalar brakeForce)
 {
-	if(m_isTireFrictionActive)
+	if (m_isTireFrictionActive)
 	{
 		for (int i = 0; i < m_numWheels; i++)
 		{
@@ -227,7 +252,7 @@ void Vehicle::setBrake(btScalar brakeForce)
 
 void Vehicle::setSteering(btScalar angle)
 {
-	if(m_isTireFrictionActive)
+	if (m_isTireFrictionActive)
 	{
 		for (int i = 0; i < m_numWheels; i++)
 		{
@@ -247,7 +272,7 @@ void Vehicle::setSteering(btScalar angle)
 
 void Vehicle::setAccelerator(btScalar engineForce)
 {
-	if(m_isTireFrictionActive)
+	if (m_isTireFrictionActive)
 	{
 		for (int i = 0; i < m_numWheels; i++)
 		{
