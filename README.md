@@ -9,10 +9,10 @@ This is a simple vehicle simulator written in C++. It is built on top of the Bul
 
 #### Clone the repository
 ````bash
->> git clone --recurse-submodules https://github.com/doddm...
+>> git clone --recurse-submodules https://github.com/doddm/<repo_name>
 ````
 
-#### Unix 
+#### Unix
 Build out of source. From the root directory of the project:
 
 ```bash
@@ -27,25 +27,25 @@ Build out of source. From the root directory of the project:
 Open and build the project in Visual Studio
 
 ### Vehicle controls:
-- Accelerate:        Forward cursor 
-- Brake:             Back cursor
-- Steer left:        Left cursor
-- Steer right:       Right cursor
-- Quit application:  Esc
 
-| Action      |   Key input   |
-|-------------|:-------------:|
-| Accelerate  | Forward cursor |
-| Brake       |    Back cursor  |
-| Steer left |    Left cursor   |
-| Steer right |    Right cursor   |
-| Quit application |    Esc    |
+| Action                           |   Key input    |
+|----------------------------------|:--------------:|
+| Accelerate                       | Forward cursor |
+| Brake                            |  Back cursor   |
+| Steer left                       |  Left cursor   |
+| Steer right                      |  Right cursor  |
+| Toggle pause physics sim         |       P        |
+| Single step physics while paused |       O        |
+| Toggle physics debug viz         |       W        |
+| Quit application                 |      Esc       |
+
+
 
 ### Camera controls:
-| Action           |          Input           |
-|------------------|:------------------------:|
-| Pitch/Yaw camera | Ctrl + Left click mouse  |
-| Zoom in/out      | Ctrl + Right click mouse |
-| Zoom in/out        |      Mouse wheel         |
+| Action             |          Input           |
+|--------------------|:------------------------:|
+| Pitch/Yaw camera   | Ctrl + Left click mouse  |
+| Zoom in/out        | Ctrl + Right click mouse |
+| Zoom in/out        |       Mouse wheel        |
 
 

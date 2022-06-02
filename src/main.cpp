@@ -14,6 +14,8 @@ CommonExampleInterface* vehicleSim;
 
 static bool renderVisualGeometry = true;
 bool visualWireframe = false;
+bool isSimPaused = false;
+bool singleStepSimulation = false;
 int gDebugDrawFlags = 0;
 
 b3KeyboardCallback prevKeyboardCallback = 0;
@@ -25,6 +27,16 @@ void MyKeyboardCallback(int key, int state)
 	if (!handled && vehicleSim)
 	{
 		vehicleSim->keyboardCallback(key, state);
+	}
+
+	if(key == 'p' && state)
+	{
+		isSimPaused = !isSimPaused;
+	}
+
+	if (key == 'o' && state)
+	{
+		singleStepSimulation = true;
 	}
 
 	if (key == 'w' && state)
@@ -68,7 +80,17 @@ int main(int argc, char* argv[])
 		app->m_instancingRenderer->init();
 		app->m_instancingRenderer->updateCamera(app->getUpAxis());
 
-		vehicleSim->stepSimulation(0.1);
+		btScalar dtSec = btScalar(clock.getTimeInSeconds());
+
+		if (dtSec > 0.1)
+		{
+			dtSec = 0.1;
+		}
+
+		if(!isSimPaused || singleStepSimulation)
+		{
+			vehicleSim->stepSimulation(dtSec);
+		}
 		// this updates the camera target position to track the vehicle
 		vehicleSim->updateGraphics();
 
@@ -85,6 +107,8 @@ int main(int argc, char* argv[])
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			vehicleSim->physicsDebugDraw(gDebugDrawFlags);
 		}
+
+		singleStepSimulation = false;
 
 		app->swapBuffer();
 	}

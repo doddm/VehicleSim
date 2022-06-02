@@ -8,9 +8,9 @@ Tire::Tire(const btVector3& mLocalChassisConnectionPosition,
 	btScalar mWidth,
 	btScalar mFriction,
 	bool isTireSteerable)
-		: m_localChassisConnectionPosition(mLocalChassisConnectionPosition),
-		  m_localRotationAxis(mLocalRotationAxis),
-		  m_localSuspensionDir(mLocalSuspensionDir),
+		: m_chassisConnectionPosLocal(mLocalChassisConnectionPosition),
+		  m_rotationAxisLocal(mLocalRotationAxis),
+		  m_suspensionDirLocal(mLocalSuspensionDir),
 		  m_radius(mRadius),
 		  m_width(mWidth),
 		  m_friction(mFriction), m_suspensionLength(mSuspensionLength), isSteerable(isTireSteerable)

@@ -21,33 +21,39 @@ struct Tire
 	btTransform m_worldTransform;
 
 	/// position where the tire suspension connects to the chassis in world space
-	btVector3 m_ChassisConnectionPosition;
+	btVector3 m_chassisConnectionPosWorld;
 	/// suspension travel direction in world space. Directed from the axle to the bottom of the tire [unit length]
-	btVector3 m_suspensionDir;
+	btVector3 m_suspensionDirWorld;
 	/// tire axle in world space
-	btVector3 m_rotationAxis;
+	btVector3 m_rotationAxisWorld;
 
 	/// position where the tire suspension connects to the chassis in local space
-	btVector3 m_localChassisConnectionPosition;
+	btVector3 m_chassisConnectionPosLocal;
 	/// suspension travel direction in local space. Directed from the axle to the bottom of the tire [unit length]
-	btVector3 m_localSuspensionDir;
+	btVector3 m_suspensionDirLocal;
 	/// tire axle in local space
-	btVector3 m_localRotationAxis;
+	btVector3 m_rotationAxisLocal;
 	/// the velocity of the tire in local space [m/s]
-	btScalar m_localVelocity;
+	btScalar m_velocityLocal;
 
 	/// position where the tire is contacting the ground in world space
 	btVector3 m_groundContactPosition;
 	btVector3 m_groundNormal;
 	btScalar m_penetrationDepth;
 
+	/// tire friction data
+	btVector3 m_groundContactVelWorld;
+	btVector3 m_groundContactFwdWorld;
+	btVector3 m_frictionDirWorld;
+	btVector3 m_latFrictionDirWorld;
+	btVector3 m_lonFrictionDirWorld;
+	btScalar m_friction{};
+
 	/// current rotation angle of the tire (only used for tire animation -- no physics yet TODO)
 	btScalar m_currentRotation{};
 	btScalar m_deltaRotation{};
-
 	btScalar m_radius{};
 	btScalar m_width{};
-	btScalar m_friction{};
 	btScalar m_currentSuspensionLength{};
 	btScalar m_suspensionForce{};
 	btScalar m_engineTorque{};

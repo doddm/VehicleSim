@@ -24,8 +24,8 @@ float currentSteeringAngle = 0.f;
 float defaultSteeringAngle = 0.3f;
 float defaultBrakingForce = 10.f;
 float maxBrakingForce = 1000.f;
-float currentBrakingForce = 0.f;
-float maxEngineForce = 5000.f;
+float currentBrakingForce = 1000.f;
+float maxEngineForce = 1000.f;
 float currentEngineForce = 0.f;
 
 float steeringIncrement = 0.04f;
@@ -45,7 +45,7 @@ btVector3 tireAxleDirLocal(-1, 0, 0);
 
 bool renderWheelsAsBoxes = true;
 
-bool isTireFrictionActive = false;
+bool isTireFrictionActive = true;
 
 VehicleSim::VehicleSim(struct GUIHelperInterface* helper) : m_guiHelper(helper)
 {
@@ -125,8 +125,16 @@ void VehicleSim::initPhysics()
 
 	for (int i = 0; i < 4; i++)
 	{
-		m_tireRenderInstances[i] =
-			m_guiHelper->registerGraphicsInstance(wheelGraphicsIndex, position, quaternion, tireColor, scaling);
+		btVector4 tireColor;
+		if(i < 2)
+		{
+			tireColor = frontTireColor;
+		}
+		else
+		{
+			tireColor = rearTireColor;
+		}
+		m_tireRenderInstances[i] = m_guiHelper->registerGraphicsInstance(wheelGraphicsIndex, position, quaternion, tireColor, scaling);
 	}
 
 	createVehicle();

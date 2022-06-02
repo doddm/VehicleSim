@@ -9,7 +9,7 @@ Vehicle::Vehicle(btRigidBody* pBody, Raycast* pRaycast)
 
 void Vehicle::update(btScalar step)
 {
-	///do raycast for all wheels
+	///do raycast for all wheels and update wheel data with raycast result
 	for (int i = 0; i < m_numWheels; i++)
 	{
 		updateTireWorldPositionRotation(m_tires[i]);
@@ -28,7 +28,7 @@ void Vehicle::update(btScalar step)
 	for (int i = 0; i < m_numWheels; i++)
 	{
 		Tire& tire = m_tires[i];
-		btVector3 relpos = tire.m_ChassisConnectionPosition - getRigidBody()->getCenterOfMassPosition();
+		btVector3 relpos = tire.m_chassisConnectionPosWorld - getRigidBody()->getCenterOfMassPosition();
 		btVector3 vel = getRigidBody()->getVelocityInLocalPoint(relpos);
 
 		if (tire.m_isContactingGround)
@@ -68,60 +68,66 @@ void Vehicle::updateTireFriction(btScalar step)
 		}
 
 		btVector3 groundContactPosition = m_tires[i].m_groundContactPosition;
-		btVector3 slipVelocity = m_chassisRigidBody->getVelocityInLocalPoint(groundContactPosition);
-		btVector3 tireAxleDirection = m_tires[i].m_rotationAxis;
+		btVector3 relativeVelocity = m_chassisRigidBody->getVelocityInLocalPoint(groundContactPosition);
+		m_tires[i].m_groundContactVelWorld = relativeVelocity;
+		m_tires[i].m_frictionDirWorld = -relativeVelocity.normalize();
 
 		const btVector3& groundNormal = m_tires[i].m_groundNormal;
 
 		const btMatrix3x3 tireBasisWorld = m_tires[i].m_worldTransform.getBasis();
 
-		tireAxleDirection = btVector3(
+		btVector3 tireAxleDirection = btVector3(
 			tireBasisWorld[0][0],
 			tireBasisWorld[1][0],
 			tireBasisWorld[2][0]);
+
+		m_tires[i].m_groundContactFwdWorld = tireAxleDirection.cross(groundNormal);
+
+		// get ground contact longitudinal component of velocity. Project relative velocity on ground forward dir
+		btScalar longComp = -relativeVelocity.dot(m_tires[i].m_groundContactFwdWorld);
+		m_tires[i].m_lonFrictionDirWorld = longComp * m_tires[i].m_groundContactFwdWorld;
+
+		// get ground contact lateral component of velocity. Project relative velocity on ground later dir (axle dir)
+		btScalar latComp = -relativeVelocity.dot(tireAxleDirection);
+		m_tires[i].m_latFrictionDirWorld = latComp * tireAxleDirection;
 
 		btScalar axelNormalComp = groundNormal.dot(tireAxleDirection);
 
 		btVector3 tireAxleDirectionPerpGround = tireAxleDirection - axelNormalComp * groundNormal;
 		tireAxleDirectionPerpGround.normalize();
 
-		btVector3 tireForward = -tireAxleDirectionPerpGround.cross((groundNormal));
-
 		btVector3 relativePosition = m_tires[i].m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
 
-		float impulseMulti = abs(m_tires[i].m_suspensionForce) * 10;
+		float impulseMulti = abs(m_tires[i].m_suspensionForce);
 
-		btScalar forwardImpulseMag = tireForward.dot(-slipVelocity) * step;
-		forwardImpulseMag = (-m_tires[i].m_engineTorque + m_tires[i].m_engineTorque) * step;
-		btVector3 forwardImpulse = forwardImpulseMag * tireForward.normalize();
+		btVector3 forwardImpulse = m_tires[i].m_groundContactFwdWorld * (m_tires[i].m_engineTorque + m_tires[i].m_brakeTorque);
+		btVector3 slipImpulse = m_tires[i].m_latFrictionDirWorld * impulseMulti;
 
-		btScalar slipImpulseMag = tireAxleDirection.dot(-slipVelocity) * step;
-		slipImpulseMag *= impulseMulti;
-		btVector3 slipImpulse = slipImpulseMag * tireAxleDirection.normalize();
-
-		m_chassisRigidBody->applyImpulse(forwardImpulse, relativePosition);
-		m_chassisRigidBody->applyImpulse(slipImpulse, relativePosition);
+		m_chassisRigidBody->applyForce(forwardImpulse, relativePosition);
+		m_chassisRigidBody->applyForce(slipImpulse, relativePosition);
 	}
 }
 void Vehicle::updateSuspension(btScalar step)
 {
-	btScalar mass = m_chassisRigidBody->getMass() / m_numWheels;
+	btScalar mass = m_chassisRigidBody->getMass();
 	for (int i = 0; i < m_numWheels; i++)
 	{
 		Tire& tire = m_tires[i];
 		if (!tire.m_isContactingGround)
 		{
+			tire.m_suspensionForce = btScalar(0.0);
 			break;
 		}
 		btScalar displacement = tire.m_currentSuspensionLength - tire.m_suspensionLength;
 		btScalar springForceMag = displacement * m_suspensionStiffness;
-		btVector3 springImpulse = springForceMag * tire.m_suspensionDir;
+		btVector3 springImpulse = springForceMag * tire.m_suspensionDirWorld;
 		btVector3 relativePosition = tire.m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
 
-		btScalar damperForceMag = tire.m_localVelocity * m_suspensionDamping;
-		btVector3 damperImpulse = damperForceMag * tire.m_suspensionDir;
+		btScalar damperForceMag = tire.m_velocityLocal * m_suspensionDamping;
+		btVector3 damperImpulse = damperForceMag * tire.m_suspensionDirWorld;
 
-		tire.m_suspensionForce = springForceMag + damperForceMag;
+		// prevent negative force
+		tire.m_suspensionForce = btMax(btScalar(0.0), -mass * (springForceMag + damperForceMag));
 		btVector3 suspensionImpulse = step * mass * (springImpulse + damperImpulse);
 
 		m_chassisRigidBody->applyImpulse(suspensionImpulse, relativePosition);
@@ -167,9 +173,9 @@ const Tire& Vehicle::getTire(int tireIndex) const
 void Vehicle::updateTireWorldPositionRotation(Tire& tire)
 {
 	btTransform chassisTransform = getChassisWorldTransform();
-	tire.m_ChassisConnectionPosition = chassisTransform(tire.m_localChassisConnectionPosition);
-	tire.m_rotationAxis = chassisTransform.getBasis() * tire.m_localRotationAxis;
-	tire.m_suspensionDir = chassisTransform.getBasis() * tire.m_localSuspensionDir;
+	tire.m_chassisConnectionPosWorld = chassisTransform(tire.m_chassisConnectionPosLocal);
+	tire.m_rotationAxisWorld = chassisTransform.getBasis() * tire.m_rotationAxisLocal;
+	tire.m_suspensionDirWorld = chassisTransform.getBasis() * tire.m_suspensionDirLocal;
 	return;
 }
 
@@ -177,8 +183,8 @@ void Vehicle::updateTireWorldTransform(int tireIndex)
 {
 	Tire& tire = m_tires[tireIndex];
 	updateTireWorldPositionRotation(tire);
-	btVector3 up = -tire.m_suspensionDir;
-	const btVector3& right = tire.m_rotationAxis;
+	btVector3 up = -tire.m_suspensionDirWorld;
+	const btVector3& right = tire.m_rotationAxisWorld;
 	btVector3 fwd = up.cross(right);
 	fwd = fwd.normalize();
 
@@ -202,34 +208,48 @@ void Vehicle::updateTireWorldTransform(int tireIndex)
 	tirePrincipalAxes[2][2] = fwd[2];
 
 	tire.m_worldTransform.setBasis(steeringRotationMatrix * tireRotationMatrix * tirePrincipalAxes);
-	tire.m_worldTransform.setOrigin(tire.m_ChassisConnectionPosition + tire.m_suspensionDir * tire.m_currentSuspensionLength);
+	tire.m_worldTransform.setOrigin(tire.m_chassisConnectionPosWorld + tire.m_suspensionDirWorld * tire.m_currentSuspensionLength);
 }
 
 void Vehicle::debugDraw(btIDebugDraw* debugDrawer)
 {
-	for (int v = 0; v < 4; v++)
+	for (int i = 0; i < 4; i++)
 	{
-		btVector3 rayColor;
-		if (m_tires[v].m_isContactingGround)
+		btVector3 tireDirsColor;
+		if (m_tires[i].m_isContactingGround)
 		{
-			rayColor.setValue(0, 0, 1);
+			tireDirsColor.setValue(0, 0, 1);
 		}
 		else
 		{
-			rayColor.setValue(1, 0, 0);
+			tireDirsColor.setValue(1, 0, 0);
 		}
 
-		btVector3 wheelPosWS = m_tires[v].m_worldTransform.getOrigin();
+		btVector3 wheelPosWS = m_tires[i].m_worldTransform.getOrigin();
 
 		btVector3 axle = btVector3(
-			m_tires[v].m_worldTransform.getBasis()[0][0],
-			m_tires[v].m_worldTransform.getBasis()[1][0],
-			m_tires[v].m_worldTransform.getBasis()[2][0]);
+			m_tires[i].m_worldTransform.getBasis()[0][0],
+			m_tires[i].m_worldTransform.getBasis()[1][0],
+			m_tires[i].m_worldTransform.getBasis()[2][0]);
 
 		// draw wheel axle as line
-		debugDrawer->drawLine(wheelPosWS, wheelPosWS + axle, rayColor);
+		debugDrawer->drawLine(wheelPosWS, wheelPosWS + axle, tireDirsColor);
 		// draw line from wheel to ground contact position
-		debugDrawer->drawLine(wheelPosWS, m_tires[v].m_groundContactPosition, rayColor);
+		debugDrawer->drawLine(wheelPosWS, m_tires[i].m_groundContactPosition, tireDirsColor);
+
+		btVector3 tireFrictionColor{1, 1, 0};
+		if (m_tires[i].m_isContactingGround)
+		{
+			// draw friction directions
+			debugDrawer->drawLine(m_tires[i].m_groundContactPosition, m_tires[i].m_groundContactPosition + m_tires[i].m_lonFrictionDirWorld, tireFrictionColor);
+			debugDrawer->drawLine(m_tires[i].m_groundContactPosition, m_tires[i].m_groundContactPosition + m_tires[i].m_latFrictionDirWorld, tireFrictionColor);
+
+			// draw engine and steering force directions
+			tireDirsColor.setValue(1, 0, 0);
+			debugDrawer->drawLine(m_tires[i].m_groundContactPosition, m_tires[i].m_groundContactPosition + m_tires[i].m_groundContactFwdWorld, tireDirsColor);
+			debugDrawer->drawLine(m_tires[i].m_groundContactPosition, m_tires[i].m_groundContactPosition + m_tires[i].m_rotationAxisWorld, tireDirsColor);
+		}
+		debugDrawer->drawSphere(m_tires[i].m_groundContactPosition, 0.1, tireDirsColor);
 	}
 }
 
@@ -239,7 +259,7 @@ void Vehicle::setBrake(btScalar brakeForce)
 	{
 		for (int i = 0; i < m_numWheels; i++)
 		{
-			m_tires[i].m_brakeTorque = brakeForce;
+			m_tires[i].m_brakeTorque = -brakeForce;
 		}
 	}
 	else
@@ -300,9 +320,9 @@ bool Vehicle::castRay(Tire& tire)
 	btVector3 start;
 	btVector3 stop;
 
-	start = tire.m_ChassisConnectionPosition;
+	start = tire.m_chassisConnectionPosWorld;
 	btScalar totalLength = tire.m_radius + tire.m_suspensionLength;
-	stop = start + tire.m_suspensionDir * totalLength;
+	stop = start + tire.m_suspensionDirWorld * totalLength;
 
 	RaycastHit hitInfo;
 	bool isHit = m_raycast->castRay(start, stop, hitInfo);
@@ -320,11 +340,11 @@ bool Vehicle::castRay(Tire& tire)
 		///relative velocity of the tire to the ground in world space
 		btVector3 contactVelocity = m_chassisRigidBody->getVelocityInLocalPoint(tireContactToCoM);
 		btScalar normalVelocity = contactVelocity.dot(tire.m_groundNormal);
-		tire.m_localVelocity = normalVelocity;
+		tire.m_velocityLocal = normalVelocity;
 
 
 		// TODO figure out why this bit from btvehicle works but the above is unstable
-		btScalar denominator = tire.m_groundNormal.dot(tire.m_suspensionDir);
+		btScalar denominator = tire.m_groundNormal.dot(tire.m_suspensionDirWorld);
 
 		btVector3 chassis_velocity_at_contactPoint;
 		btVector3 relpos = tire.m_groundContactPosition - getRigidBody()->getCenterOfMassPosition();
@@ -334,13 +354,16 @@ bool Vehicle::castRay(Tire& tire)
 		btScalar projVel = tire.m_groundNormal.dot(chassis_velocity_at_contactPoint);
 
 		btScalar inv = btScalar(-1.) / denominator;
-		tire.m_localVelocity = projVel * inv;
+		tire.m_velocityLocal = projVel * inv;
 
 		return true;
 	}
 
 	tire.m_isContactingGround = false;
 	tire.m_currentSuspensionLength = tire.m_suspensionLength;
+	btVector3& tireOrigin = tire.m_chassisConnectionPosWorld;
+	// TODO double check this math
+	tire.m_groundContactPosition = tireOrigin + tire.m_suspensionLength * tire.m_suspensionDirWorld;
 
 	return false;
 }

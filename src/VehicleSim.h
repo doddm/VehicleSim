@@ -14,8 +14,10 @@ public:
 	const btVector4 terrainColor{ 112. / 256., 129. / 256., 87. / 256., 1 };
 	/// bluish color
 	const btVector4 chassisColor{ 72. / 256., 133. / 256., 237. / 256., 1 };
-	/// dark gray color
-	const btVector4 tireColor{ 0.2, 0.2, 0.2, 1 };
+	/// gray color
+	const btVector4 frontTireColor{ 0.3, 0.3, 0.3, 1 };
+	/// darker gray color
+	const btVector4 rearTireColor{ 0.15, 0.15, 0.15, 1 };
 
 	GUIHelperInterface* m_guiHelper;
 
