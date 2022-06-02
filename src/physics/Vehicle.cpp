@@ -28,36 +28,27 @@ void Vehicle::update(btScalar step)
 	for (int i = 0; i < m_numWheels; i++)
 	{
 		Tire& tire = m_tires[i];
-		btVector3 relpos = tire.m_chassisConnectionPosWorld - getRigidBody()->getCenterOfMassPosition();
-		btVector3 vel = getRigidBody()->getVelocityInLocalPoint(relpos);
+		btVector3 comToContactPoint = tire.m_chassisConnectionPosWorld - getRigidBody()->getCenterOfMassPosition();
+		btVector3 chassisVelocityAtContactPointWorld = getRigidBody()->getVelocityInLocalPoint(comToContactPoint);
 
 		if (tire.m_isContactingGround)
 		{
 			const btTransform& chassisWorldTransform = getChassisWorldTransform();
 
-			btVector3 fwd(
-				chassisWorldTransform.getBasis()[0][2],
-				chassisWorldTransform.getBasis()[1][2],
-				chassisWorldTransform.getBasis()[2][2]);
+			// get forward component of velocity
+			btScalar forwardSpeed = tire.m_groundContactFwdWorld.dot(chassisVelocityAtContactPointWorld);
 
-			btScalar proj = fwd.dot(tire.m_groundNormal);
-			fwd -= tire.m_groundNormal * proj;
-
-			btScalar proj2 = fwd.dot(vel);
-
-			tire.m_deltaRotation = (proj2 * step) / (tire.m_radius);
+			tire.m_deltaRotation = (forwardSpeed * step) / (tire.m_radius);
 			tire.m_currentRotation += tire.m_deltaRotation;
 		}
 		else
 		{
 			tire.m_currentRotation += tire.m_deltaRotation;
 		}
-
-		tire.m_deltaRotation *= btScalar(0.99);  //damping of rotation when not in contact
 	}
 }
 
-// TODO Fix friction modeling
+// TODO Improve tire friction modeling
 void Vehicle::updateTireFriction(btScalar step)
 {
 	for (int i = 0; i < m_numWheels; i++)
@@ -68,9 +59,10 @@ void Vehicle::updateTireFriction(btScalar step)
 		}
 
 		btVector3 groundContactPosition = m_tires[i].m_groundContactPosition;
-		btVector3 relativeVelocity = m_chassisRigidBody->getVelocityInLocalPoint(groundContactPosition);
-		m_tires[i].m_groundContactVelWorld = relativeVelocity;
-		m_tires[i].m_frictionDirWorld = -relativeVelocity.normalize();
+		btVector3 chassisVelocityAtContactPointWorld = m_chassisRigidBody->getVelocityInLocalPoint(groundContactPosition);
+
+		m_tires[i].m_groundContactVelWorld = chassisVelocityAtContactPointWorld;
+		m_tires[i].m_frictionDirWorld = -chassisVelocityAtContactPointWorld.normalize();
 
 		const btVector3& groundNormal = m_tires[i].m_groundNormal;
 
@@ -84,11 +76,11 @@ void Vehicle::updateTireFriction(btScalar step)
 		m_tires[i].m_groundContactFwdWorld = tireAxleDirection.cross(groundNormal);
 
 		// get ground contact longitudinal component of velocity. Project relative velocity on ground forward dir
-		btScalar longComp = -relativeVelocity.dot(m_tires[i].m_groundContactFwdWorld);
+		btScalar longComp = -chassisVelocityAtContactPointWorld.dot(m_tires[i].m_groundContactFwdWorld);
 		m_tires[i].m_lonFrictionDirWorld = longComp * m_tires[i].m_groundContactFwdWorld;
 
 		// get ground contact lateral component of velocity. Project relative velocity on ground later dir (axle dir)
-		btScalar latComp = -relativeVelocity.dot(tireAxleDirection);
+		btScalar latComp = -chassisVelocityAtContactPointWorld.dot(tireAxleDirection);
 		m_tires[i].m_latFrictionDirWorld = latComp * tireAxleDirection;
 
 		btScalar axelNormalComp = groundNormal.dot(tireAxleDirection);
@@ -98,13 +90,23 @@ void Vehicle::updateTireFriction(btScalar step)
 
 		btVector3 relativePosition = m_tires[i].m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
 
-		float impulseMulti = abs(m_tires[i].m_suspensionForce);
+		btScalar suspensionForceMag = abs(m_tires[i].m_suspensionForce);
 
-		btVector3 forwardImpulse = m_tires[i].m_groundContactFwdWorld * (m_tires[i].m_engineTorque + m_tires[i].m_brakeTorque);
-		btVector3 slipImpulse = m_tires[i].m_latFrictionDirWorld * impulseMulti;
+		btScalar brakeForce;
+		if(longComp < 0.1)
+		{
+			brakeForce = m_tires[i].m_brakeForce;
+		}
+		else
+		{
+			brakeForce = btScalar(0.0);
+		}
 
-		m_chassisRigidBody->applyForce(forwardImpulse, relativePosition);
-		m_chassisRigidBody->applyForce(slipImpulse, relativePosition);
+		btVector3 lonForce = m_tires[i].m_groundContactFwdWorld * (m_tires[i].m_engineForce + brakeForce) * suspensionForceMag;
+		btVector3 latForce = m_tires[i].m_latFrictionDirWorld * suspensionForceMag;
+
+		m_chassisRigidBody->applyForce(lonForce, relativePosition);
+		m_chassisRigidBody->applyForce(latForce, relativePosition);
 	}
 }
 void Vehicle::updateSuspension(btScalar step)
@@ -128,6 +130,8 @@ void Vehicle::updateSuspension(btScalar step)
 
 		// prevent negative force
 		tire.m_suspensionForce = btMax(btScalar(0.0), -mass * (springForceMag + damperForceMag));
+		// clamp large forces
+		tire.m_suspensionForce = btMin(btScalar(4000.0), -mass * (springForceMag + damperForceMag));
 		btVector3 suspensionImpulse = step * mass * (springImpulse + damperImpulse);
 
 		m_chassisRigidBody->applyImpulse(suspensionImpulse, relativePosition);
@@ -240,6 +244,8 @@ void Vehicle::debugDraw(btIDebugDraw* debugDrawer)
 		btVector3 tireFrictionColor{1, 1, 0};
 		if (m_tires[i].m_isContactingGround)
 		{
+//			debugDrawer->drawLine(m_tires[i].m_groundContactPosition, m_tires[i].m_groundContactPosition + m_tires[i].m_velocityLocal, tireFrictionColor);
+
 			// draw friction directions
 			debugDrawer->drawLine(m_tires[i].m_groundContactPosition, m_tires[i].m_groundContactPosition + m_tires[i].m_lonFrictionDirWorld, tireFrictionColor);
 			debugDrawer->drawLine(m_tires[i].m_groundContactPosition, m_tires[i].m_groundContactPosition + m_tires[i].m_latFrictionDirWorld, tireFrictionColor);
@@ -259,7 +265,7 @@ void Vehicle::setBrake(btScalar brakeForce)
 	{
 		for (int i = 0; i < m_numWheels; i++)
 		{
-			m_tires[i].m_brakeTorque = -brakeForce;
+			m_tires[i].m_brakeForce = -brakeForce;
 		}
 	}
 	else
@@ -278,7 +284,19 @@ void Vehicle::setSteering(btScalar angle)
 		{
 			if (m_tires[i].isSteerable)
 			{
-				m_tires[i].m_steeringAngle = angle;
+				const float steeringIncrement = 0.01;
+				if(angle != 0)
+				{
+					m_tires[i].m_steeringAngle += angle * 0.01;
+				}
+				else if(m_tires[i].m_steeringAngle > 0)
+				{
+					m_tires[i].m_steeringAngle -= steeringIncrement;
+				}
+				else if(m_tires[i].m_steeringAngle < 0)
+				{
+					m_tires[i].m_steeringAngle += steeringIncrement;
+				}
 			}
 		}
 	}
@@ -298,7 +316,7 @@ void Vehicle::setAccelerator(btScalar engineForce)
 		{
 			if (!m_tires[i].isSteerable)
 			{
-				m_tires[i].m_engineTorque = engineForce;
+				m_tires[i].m_engineForce = engineForce;
 			}
 		}
 	}

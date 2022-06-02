@@ -56,8 +56,8 @@ struct Tire
 	btScalar m_width{};
 	btScalar m_currentSuspensionLength{};
 	btScalar m_suspensionForce{};
-	btScalar m_engineTorque{};
-	btScalar m_brakeTorque{};
+	btScalar m_engineForce{};
+	btScalar m_brakeForce{};
 
 	/// whether the wheel is in contact with the ground based on ray cast result
 	bool m_isContactingGround{};

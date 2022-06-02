@@ -63,8 +63,6 @@ int main(int argc, char* argv[])
 	app->m_window->setKeyboardCallback(MyKeyboardCallback);
 	s_window = app->m_window;
 
-	std::cout << "Hello World" << std::endl;
-
 	OpenGLGuiHelper gui(app, false);
 
 	CommonExampleOptions options(&gui);

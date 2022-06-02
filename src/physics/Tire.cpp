@@ -16,4 +16,6 @@ Tire::Tire(const btVector3& mLocalChassisConnectionPosition,
 		  m_friction(mFriction), m_suspensionLength(mSuspensionLength), isSteerable(isTireSteerable)
 {
 	m_currentRotation = 0;
+	m_engineForce = 0;
+	m_brakeForce = 0;
 }

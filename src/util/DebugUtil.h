@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-static class DebugUtil
+ class DebugUtil
 {
  public:
 	static void printVector3(const btVector3 vector, std::string prefix = "")

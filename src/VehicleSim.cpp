@@ -22,21 +22,20 @@ float tireWidth = 0.3f;
 
 float currentSteeringAngle = 0.f;
 float defaultSteeringAngle = 0.3f;
-float defaultBrakingForce = 10.f;
-float maxBrakingForce = 1000.f;
-float currentBrakingForce = 1000.f;
-float maxEngineForce = 1000.f;
+float maxBrakingForce = 1.f;
+float currentBrakingForce = 0.f;
+float maxEngineForce = 0.4f;
 float currentEngineForce = 0.f;
 
 float steeringIncrement = 0.04f;
-float wheelBaseFront = 2.1f;
+float wheelBaseFront = 3.0f;
 float wheelFriction = 100;
-float suspensionStiffness = 20.f;
+float suspensionStiffness = 6.0f;
 float suspensionDamping = 3.0f;
-float suspensionLength = 0.9;
+float suspensionLength = 1.0;
 
 ///(0 - plane, 1 - hills)
-int terrainType = 1;
+int terrainType = 0;
 
 /// unit vector of suspension travel.
 btVector3 tireSuspensionDirLocal(0, -1, 0);
@@ -386,14 +385,14 @@ bool VehicleSim::keyboardCallback(int key, int state)
 		case B3G_UP_ARROW:
 		{
 			currentEngineForce = 0.f;
-			currentBrakingForce = defaultBrakingForce;
+			currentBrakingForce = 0.f;
 			handled = true;
 			break;
 		}
 		case B3G_DOWN_ARROW:
 		{
 			currentEngineForce = 0.f;
-			currentBrakingForce = defaultBrakingForce;
+			currentBrakingForce = 0.f;
 			handled = true;
 			break;
 		}
@@ -518,8 +517,8 @@ void VehicleSim::initGroundTerrain(int option)
 
 			bool useQuantizedAabbCompression = true;
 			btBvhTriangleMeshShape* triMeshShape = new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression);
-			triMeshShape->setLocalScaling(btVector3(1.0, 0.2, 1.0));
-			trans.setOrigin(btVector3(0, -10, 0));
+			triMeshShape->setLocalScaling(btVector3(1.0, 0.4, 1.0));
+			trans.setOrigin(btVector3(0, -20, 0));
 
 			btRigidBody* body = localCreateRigidBody(0, trans, triMeshShape);
 			body->setFriction(btScalar(0.9));
