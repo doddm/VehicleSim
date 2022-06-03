@@ -24,6 +24,11 @@ void Vehicle::update(btScalar step)
 		updateTireFriction(step);
 	}
 
+	if(m_aeroModel)
+	{
+		m_aeroModel->Update();
+	}
+
 	for (int i = 0; i < m_numWheels; i++)
 	{
 		Tire& tire = m_tires[i];
@@ -404,4 +409,8 @@ void Vehicle::setSuspensionDamping(btScalar damping)
 void Vehicle::setTireFrictionActive(bool isActive)
 {
 	m_isTireFrictionActive = isActive;
+}
+void Vehicle::setAerodynamicsModel(Aerodynamics* aeroModel)
+{
+	m_aeroModel = aeroModel;
 }

@@ -28,7 +28,7 @@ SET(VehicleTester_SRCS
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/GL_ShapeDrawer.cpp
         ${BULLET_PHYSICS_EXAMPLES}/ExampleBrowser/CollisionShape2TriangleMesh.cpp
         ${BULLET_PHYSICS_EXAMPLES}/Utils/b3Clock.cpp
-        VehicleSim.cpp VehicleSim.h)
+        VehicleSim.cpp VehicleSim.h physics/Aerodynamics.cpp physics/Aerodynamics.cpp physics/Aerodynamics.h)
 
 LINK_LIBRARIES(
         BulletDynamics BulletCollision LinearMath OpenGLWindow Bullet3Common 

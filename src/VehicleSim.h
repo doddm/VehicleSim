@@ -39,6 +39,8 @@ public:
 
 	Raycast* m_vehicleRaycast;
 
+	Aerodynamics* m_aeroModel;
+
 	btCollisionShape* m_tireShape;
 
 	int m_tireRenderInstances[4];

@@ -6,6 +6,7 @@
 #include "physics/CommonRigidBodyBase.h"
 
 #include <iostream>
+#include <VehicleSimBeta/src/physics/Aerodynamics.h>
 
 float gravity = 9.81;
 
@@ -159,6 +160,9 @@ void VehicleSim::createVehicle()
 
 	m_vehicle->setTireFrictionActive(isTireFrictionActive);
 
+	m_aeroModel = new Aerodynamics(m_vehicleChassis);
+	m_vehicle->setAerodynamicsModel(m_aeroModel);
+
 	addTiresToVehicle();
 }
 
@@ -264,6 +268,9 @@ void VehicleSim::exitPhysics()
 
 	delete m_collisionConfiguration;
 	m_collisionConfiguration = nullptr;
+
+	delete m_aeroModel;
+	m_aeroModel = nullptr;
 }
 
 void VehicleSim::stepSimulation(float deltaTime)

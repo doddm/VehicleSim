@@ -4,6 +4,7 @@
 #include "btBulletDynamicsCommon.h"
 #include "Tire.h"
 #include "Raycast.h"
+#include "Aerodynamics.h"
 
 class Vehicle : public btActionInterface
 {
@@ -29,6 +30,7 @@ class Vehicle : public btActionInterface
 	void setSteering(btScalar angle, btScalar increment);
 	void setSuspensionStiffness(btScalar stiffness);
 	void setSuspensionDamping(btScalar damping);
+	void setAerodynamicsModel(Aerodynamics* aeroModel);
 
 	~Vehicle() override;
 
@@ -46,6 +48,7 @@ private:
 	Raycast* m_raycast;
 	btRigidBody* m_chassisRigidBody;
 	btAlignedObjectArray<Tire> m_tires;
+	Aerodynamics* m_aeroModel;
 	btScalar m_suspensionStiffness;
 	btScalar m_suspensionDamping;
 	bool m_isTireFrictionActive;
