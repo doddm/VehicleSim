@@ -26,7 +26,7 @@ class Vehicle : public btActionInterface
 	bool castRay(Tire& tire);
 	void setBrake(btScalar brakeForce);
 	void setAccelerator(btScalar engineForce);
-	void setSteering(btScalar angle);
+	void setSteering(btScalar angle, btScalar increment);
 	void setSuspensionStiffness(btScalar stiffness);
 	void setSuspensionDamping(btScalar damping);
 

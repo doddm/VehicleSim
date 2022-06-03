@@ -1,4 +1,3 @@
-#include <iostream>
 #include "Utils/b3Clock.h"
 #include "CommonInterfaces/CommonExampleInterface.h"
 #include "VehicleSim.h"
@@ -7,7 +6,6 @@
 #include "../external/bullet/examples/OpenGLWindow/OpenGLInclude.h"
 
 #include "graphics/OpenGLGuiHelper.h"
-#include "util/DebugUtil.h"
 
 static CommonWindowInterface* s_window = 0;
 CommonExampleInterface* vehicleSim;

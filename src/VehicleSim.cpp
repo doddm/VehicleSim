@@ -20,22 +20,22 @@ float tireHeight = 0.8f;
 float tireRadius = 0.35f;
 float tireWidth = 0.3f;
 
-float currentSteeringAngle = 0.f;
+float targetSteeringAngle = 0.f;
 float defaultSteeringAngle = 0.3f;
-float maxBrakingForce = 1.f;
+float maxBrakingForce = 1000.0f;
 float currentBrakingForce = 0.f;
-float maxEngineForce = 0.4f;
+float maxEngineForce = 1000.0f;
 float currentEngineForce = 0.f;
 
-float steeringIncrement = 0.04f;
+float steeringIncrement = 0.02f;
 float wheelBaseFront = 3.0f;
 float wheelFriction = 100;
-float suspensionStiffness = 6.0f;
-float suspensionDamping = 3.0f;
+float suspensionStiffness = 9.0f;
+float suspensionDamping = 1.0f;
 float suspensionLength = 1.0;
 
 ///(0 - plane, 1 - hills)
-int terrainType = 0;
+int terrainType = 1;
 
 /// unit vector of suspension travel.
 btVector3 tireSuspensionDirLocal(0, -1, 0);
@@ -268,7 +268,7 @@ void VehicleSim::exitPhysics()
 
 void VehicleSim::stepSimulation(float deltaTime)
 {
-	m_vehicle->setSteering(currentSteeringAngle);
+	m_vehicle->setSteering(targetSteeringAngle, steeringIncrement);
 	m_vehicle->setAccelerator(currentEngineForce);
 	m_vehicle->setBrake(currentBrakingForce);
 
@@ -277,7 +277,7 @@ void VehicleSim::stepSimulation(float deltaTime)
 		int maxSimSubSteps = 2;
 		m_dynamicsWorld->stepSimulation(deltaTime, maxSimSubSteps);
 
-		if(m_vehicleChassis->getCenterOfMassPosition().y() < -20)
+		if(m_vehicleChassis->getCenterOfMassPosition().y() < -40)
 		{
 			resetVehicle(btVector3(0, 0, 0));
 		}
@@ -342,20 +342,20 @@ bool VehicleSim::keyboardCallback(int key, int state)
 			case B3G_LEFT_ARROW:
 			{
 				handled = true;
-				currentSteeringAngle = defaultSteeringAngle;
-				if (currentSteeringAngle > defaultSteeringAngle)
+				targetSteeringAngle = defaultSteeringAngle;
+				if (targetSteeringAngle > defaultSteeringAngle)
 				{
-					currentSteeringAngle = defaultSteeringAngle;
+					targetSteeringAngle = defaultSteeringAngle;
 				}
 				break;
 			}
 			case B3G_RIGHT_ARROW:
 			{
 				handled = true;
-				currentSteeringAngle = -defaultSteeringAngle;
-				if (currentSteeringAngle < -defaultSteeringAngle)
+				targetSteeringAngle = -defaultSteeringAngle;
+				if (targetSteeringAngle < -defaultSteeringAngle)
 				{
-					currentSteeringAngle = -defaultSteeringAngle;
+					targetSteeringAngle = -defaultSteeringAngle;
 				}
 				break;
 			}
@@ -399,7 +399,7 @@ bool VehicleSim::keyboardCallback(int key, int state)
 		case B3G_LEFT_ARROW:
 		case B3G_RIGHT_ARROW:
 		{
-			currentSteeringAngle = 0.f;
+			targetSteeringAngle = 0.f;
 			handled = true;
 			break;
 		}
@@ -521,7 +521,6 @@ void VehicleSim::initGroundTerrain(int option)
 			trans.setOrigin(btVector3(0, -20, 0));
 
 			btRigidBody* body = localCreateRigidBody(0, trans, triMeshShape);
-			body->setFriction(btScalar(0.9));
 
 			m_guiHelper->createCollisionShapeGraphicsObject(body->getCollisionShape());
 			m_guiHelper->createCollisionObjectGraphicsObject(body, terrainColor);
