@@ -23,9 +23,9 @@ float tireWidth = 0.3f;
 
 float targetSteeringAngle = 0.f;
 float defaultSteeringAngle = 0.3f;
-float maxBrakingForce = 1000.0f;
+float maxBrakingForce = 3000.0f;
 float currentBrakingForce = 0.f;
-float maxEngineForce = 1000.0f;
+float maxEngineForce = 1500.0f;
 float currentEngineForce = 0.f;
 
 float steeringIncrement = 0.02f;
@@ -33,7 +33,7 @@ float wheelBaseFront = 3.0f;
 float wheelFriction = 100;
 float suspensionStiffness = 9.0f;
 float suspensionDamping = 1.0f;
-float suspensionLength = 1.0;
+float suspensionLength = 0.8;
 
 ///(0 - plane, 1 - hills)
 int terrainType = 1;
@@ -42,6 +42,8 @@ int terrainType = 1;
 btVector3 tireSuspensionDirLocal(0, -1, 0);
 /// unit vector indicating the direction of the tire axle
 btVector3 tireAxleDirLocal(-1, 0, 0);
+
+btVector3 initialVehiclePosition(0, 1, 10);
 
 bool renderWheelsAsBoxes = true;
 
@@ -100,7 +102,7 @@ void VehicleSim::initPhysics()
 
 	btTransform tr;
 	tr.setIdentity();
-	tr.setOrigin(btVector3(0, 0, 0));
+	tr.setOrigin(initialVehiclePosition);
 
 	float vehicleMass = 700.0f;
 	m_vehicleChassis = localCreateRigidBody(vehicleMass, tr, compound); // chassisShape);
@@ -286,7 +288,7 @@ void VehicleSim::stepSimulation(float deltaTime)
 
 		if(m_vehicleChassis->getCenterOfMassPosition().y() < -40)
 		{
-			resetVehicle(btVector3(0, 0, 0));
+			resetVehicle(initialVehiclePosition);
 		}
 	}
 }

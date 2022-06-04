@@ -8,7 +8,7 @@ void Aerodynamics::Update()
 	btScalar velocityMag = velocity.length();
 	btScalar dragScalar = 0.5 * m_surfaceArea * velocityMag * velocityMag * k_coefficientOfDrag;
 
-	m_rigidBody->applyCentralForce(-dragScalar * velocity.normalize());
+	m_rigidBody->applyCentralForce(-dragScalar * velocity.normalized());
 }
 
 Aerodynamics::Aerodynamics(btRigidBody* pBody)
