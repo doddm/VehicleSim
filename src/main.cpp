@@ -1,3 +1,4 @@
+#include <iostream>
 #include "Utils/b3Clock.h"
 #include "CommonInterfaces/CommonExampleInterface.h"
 #include "VehicleSim.h"
@@ -7,7 +8,9 @@
 
 #include "graphics/OpenGLGuiHelper.h"
 
+static const double k_microsecondsPerSecond = 1e6;
 static CommonWindowInterface* s_window = 0;
+static double gMinUpdateTimeMicroSecs = 1000.;
 CommonExampleInterface* vehicleSim;
 
 static bool renderVisualGeometry = true;
@@ -17,6 +20,8 @@ bool singleStepSimulation = false;
 int gDebugDrawFlags = 0;
 
 b3KeyboardCallback prevKeyboardCallback = 0;
+
+void Update(SimpleOpenGL3App* app, float deltaTime);
 
 void MyKeyboardCallback(int key, int state)
 {
@@ -73,40 +78,20 @@ int main(int argc, char* argv[])
 
 	while (!app->m_window->requestedExit())
 	{
-		app->m_instancingRenderer->init();
-		app->m_instancingRenderer->updateCamera(app->getUpAxis());
-
-		btScalar dtSec = btScalar(clock.getTimeInSeconds());
-
-		if (dtSec > 0.1)
+		float deltaTimeInSeconds = clock.getTimeMicroseconds() / k_microsecondsPerSecond;
+		if (deltaTimeInSeconds > 0.1)
 		{
-			dtSec = 0.1;
+			deltaTimeInSeconds = 0.1;
 		}
-
-		if(!isSimPaused || singleStepSimulation)
+		if (deltaTimeInSeconds < (gMinUpdateTimeMicroSecs / k_microsecondsPerSecond))
 		{
-			vehicleSim->stepSimulation(dtSec);
-		}
-		// this updates the camera target position to track the vehicle
-		vehicleSim->updateGraphics();
-
-		if (renderVisualGeometry && ((gDebugDrawFlags & btIDebugDraw::DBG_DrawWireframe) == 0))
-		{
-			if (visualWireframe)
-			{
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			}
-			vehicleSim->renderScene();
+			b3Clock::usleep(gMinUpdateTimeMicroSecs / 10.);
 		}
 		else
 		{
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			vehicleSim->physicsDebugDraw(gDebugDrawFlags);
+			clock.reset();
+			Update(app, deltaTimeInSeconds);
 		}
-
-		singleStepSimulation = false;
-
-		app->swapBuffer();
 	}
 
 	vehicleSim->exitPhysics();
@@ -114,4 +99,35 @@ int main(int argc, char* argv[])
 	delete app;
 
 	return 0;
+}
+
+void Update(SimpleOpenGL3App* app, float deltaTime)
+{
+	app->m_instancingRenderer->init();
+	app->m_instancingRenderer->updateCamera(app->getUpAxis());
+
+	if(!isSimPaused || singleStepSimulation)
+	{
+		vehicleSim->stepSimulation(deltaTime);
+	}
+	// this updates the camera target position to track the vehicle
+	vehicleSim->updateGraphics();
+
+	if (renderVisualGeometry && ((gDebugDrawFlags & btIDebugDraw::DBG_DrawWireframe) == 0))
+	{
+		if (visualWireframe)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		vehicleSim->renderScene();
+	}
+	else
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		vehicleSim->physicsDebugDraw(gDebugDrawFlags);
+	}
+
+	singleStepSimulation = false;
+
+	app->swapBuffer();
 }

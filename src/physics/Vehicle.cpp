@@ -57,7 +57,7 @@ void Vehicle::updateTireFriction(btScalar step)
 {
 	// hand-tuned factor to give vehicle tires good friction feel
 
-	const btScalar lateralFrictionScaleFactor(50);
+	const btScalar lateralFrictionScaleFactor(20);
 	for (int i = 0; i < m_numWheels; i++)
 	{
 		if (!m_tires[i].m_isContactingGround)
@@ -70,7 +70,7 @@ void Vehicle::updateTireFriction(btScalar step)
 		btVector3 chassisVelocityAtContactPointWorld = m_chassisRigidBody->getVelocityInLocalPoint(relativePosition);
 
 		m_tires[i].m_groundContactVelWorld = chassisVelocityAtContactPointWorld;
-		m_tires[i].m_frictionDirWorld = -chassisVelocityAtContactPointWorld.normalize();
+		m_tires[i].m_frictionDirWorld = -chassisVelocityAtContactPointWorld.normalized();
 
 		const btVector3& groundNormal = m_tires[i].m_groundNormal;
 
@@ -85,11 +85,11 @@ void Vehicle::updateTireFriction(btScalar step)
 
 		// get ground contact longitudinal component of velocity. Project relative velocity on ground forward dir
 		btScalar longComp = -chassisVelocityAtContactPointWorld.dot(m_tires[i].m_groundContactFwdWorld);
-		m_tires[i].m_lonFrictionDirWorld = longComp * m_tires[i].m_groundContactFwdWorld;
+		m_tires[i].m_lonFrictionWorld = longComp * m_tires[i].m_groundContactFwdWorld;
 
 		// get ground contact lateral component of velocity. Project relative velocity on ground later dir (axle dir)
 		btScalar latComp = -chassisVelocityAtContactPointWorld.dot(tireAxleDirection);
-		m_tires[i].m_latFrictionDirWorld = latComp * tireAxleDirection;
+		m_tires[i].m_latFrictionWorld = latComp * tireAxleDirection;
 
 		btScalar axelNormalComp = groundNormal.dot(tireAxleDirection);
 
@@ -99,19 +99,19 @@ void Vehicle::updateTireFriction(btScalar step)
 		relativePosition = m_tires[i].m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
 
 		btScalar brakeForce;
-		if (longComp < 0.1)
+		if (longComp < 0)
 		{
 			brakeForce = m_tires[i].m_brakeForce;
 		}
 		else
 		{
-			brakeForce = btScalar(0.0);
+			brakeForce = -m_tires[i].m_brakeForce;
 		}
 
 		btVector3 lonForce = m_tires[i].m_groundContactFwdWorld * (m_tires[i].m_engineForce + brakeForce);
 
 		m_chassisRigidBody->applyImpulse(lonForce * step, relativePosition);
-		m_chassisRigidBody->applyImpulse(lateralFrictionScaleFactor * m_tires[i].m_latFrictionDirWorld, relativePosition);
+		m_chassisRigidBody->applyImpulse(lateralFrictionScaleFactor * m_tires[i].m_latFrictionWorld, relativePosition);
 	}
 }
 void Vehicle::updateSuspension(btScalar step)
@@ -257,10 +257,10 @@ void Vehicle::debugDraw(btIDebugDraw* debugDrawer)
 
 			// draw friction directions
 			debugDrawer->drawLine(m_tires[i].m_groundContactPosition,
-				m_tires[i].m_groundContactPosition + m_tires[i].m_lonFrictionDirWorld,
+				m_tires[i].m_groundContactPosition + m_tires[i].m_lonFrictionWorld,
 				tireFrictionColor);
 			debugDrawer->drawLine(m_tires[i].m_groundContactPosition,
-				m_tires[i].m_groundContactPosition + m_tires[i].m_latFrictionDirWorld,
+				m_tires[i].m_groundContactPosition + m_tires[i].m_latFrictionWorld,
 				tireFrictionColor);
 
 			// draw engine and steering force directions

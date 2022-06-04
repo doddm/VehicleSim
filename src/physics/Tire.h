@@ -45,8 +45,8 @@ struct Tire
 	btVector3 m_groundContactVelWorld;
 	btVector3 m_groundContactFwdWorld;
 	btVector3 m_frictionDirWorld;
-	btVector3 m_latFrictionDirWorld;
-	btVector3 m_lonFrictionDirWorld;
+	btVector3 m_latFrictionWorld;
+	btVector3 m_lonFrictionWorld;
 	btScalar m_friction{};
 
 	/// current rotation angle of the tire (only used for tire animation -- no physics yet TODO)
