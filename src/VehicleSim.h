@@ -4,6 +4,7 @@
 #include "examples/CommonExampleInterface.h"
 #include "CommonInterfaces/CommonGUIHelperInterface.h"
 #include "physics/Vehicle.h"
+#include "physics/VehicleConfig.h"
 
 class CommonExampleInterface* VehicleSimCreateFunc(struct CommonExampleOptions& options);
 
@@ -57,12 +58,12 @@ public:
 	bool mouseMoveCallback(float x, float y) override;
 	bool mouseButtonCallback(int button, int state, float x, float y) override;
 	bool keyboardCallback(int key, int state) override;
+	void addVehicle(const VehicleConfig& config, const btVector3& position);
 
 	btRigidBody* localCreateRigidBody(btScalar mass, const btTransform& worldTransform, btCollisionShape* colSape);
 
 private:
 	void initGroundTerrain(int option);
-	void createVehicle();
 	void addTiresToVehicle();
 	void setCameraTargetPosition(float x, float y, float z);
 	void resetVehicle(btVector3 position);

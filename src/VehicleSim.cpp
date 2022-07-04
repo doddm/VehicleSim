@@ -8,13 +8,9 @@
 #include <iostream>
 #include <VehicleSimBeta/src/physics/Aerodynamics.h>
 
-float gravity = 9.81;
-
 float terrainExtent = 100;
 float terrainThickness = 10;
 
-float bodyWidth = 1.9f;
-float bodyHeight = 1.8f;
 float bodyLength = 3.5f;
 
 float tireHeight = 0.8f;
@@ -79,15 +75,21 @@ void VehicleSim::initPhysics()
 
 	m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
 
+	const btScalar gravity = 9.81;
 	m_dynamicsWorld->setGravity(btVector3(0, -gravity, 0));
 
 	initGroundTerrain(terrainType);
 
+//	createVehicle();
+}
+
+void VehicleSim::addVehicle(const VehicleConfig& config, const btVector3& initialPosition)
+{
 	/// Chassis coordinate system
 	/// +x - left
 	/// +y - up
 	/// +z - forward
-	btCollisionShape* chassisShape = new btBoxShape(btVector3(0.5f * bodyWidth, 0.5f * bodyHeight, 0.5f * bodyLength));
+	btCollisionShape* chassisShape = new btBoxShape(btVector3(0.5f * config.m_bodyWidth, 0.5f * config.m_bodyHeight, 0.5f * config.m_bodyLength));
 	m_collisionShapes.push_back(chassisShape);
 
 	btCompoundShape* compound = new btCompoundShape();
@@ -96,16 +98,15 @@ void VehicleSim::initPhysics()
 	localTrans.setIdentity();
 
 	// localTrans effectively shifts the center of mass with respect to the chassis
-	localTrans.setOrigin(btVector3(0, bodyHeight, 0));
+	localTrans.setOrigin(btVector3(0, config.m_bodyHeight, 0));
 
 	compound->addChildShape(localTrans, chassisShape);
 
 	btTransform tr;
 	tr.setIdentity();
-	tr.setOrigin(initialVehiclePosition);
+	tr.setOrigin(initialPosition);
 
-	float vehicleMass = 700.0f;
-	m_vehicleChassis = localCreateRigidBody(vehicleMass, tr, compound); // chassisShape);
+	m_vehicleChassis = localCreateRigidBody(config.m_mass, tr, compound);
 
 	if (renderWheelsAsBoxes)
 	{
@@ -139,14 +140,6 @@ void VehicleSim::initPhysics()
 		m_tireRenderInstances[i] = m_guiHelper->registerGraphicsInstance(wheelGraphicsIndex, position, quaternion, tireColor, scaling);
 	}
 
-	createVehicle();
-
-	m_guiHelper->createCollisionShapeGraphicsObject(m_vehicleChassis->getCollisionShape());
-	m_guiHelper->createCollisionObjectGraphicsObject(m_vehicleChassis, chassisColor);
-}
-
-void VehicleSim::createVehicle()
-{
 	m_vehicleRaycast = new Raycast(m_dynamicsWorld);
 	m_vehicle = new Vehicle(m_vehicleChassis, m_vehicleRaycast);
 
@@ -166,6 +159,9 @@ void VehicleSim::createVehicle()
 	m_vehicle->setAerodynamicsModel(m_aeroModel);
 
 	addTiresToVehicle();
+
+	m_guiHelper->createCollisionShapeGraphicsObject(m_vehicleChassis->getCollisionShape());
+	m_guiHelper->createCollisionObjectGraphicsObject(m_vehicleChassis, chassisColor);
 }
 
 void VehicleSim::addTiresToVehicle()
@@ -471,14 +467,6 @@ int LandscapeIdxCount[] =
 btScalar* LandscapeVtx[] =
 	{ Landscape01Vtx, Landscape02Vtx, Landscape03Vtx, Landscape04Vtx, Landscape05Vtx, Landscape06Vtx, Landscape07Vtx,
 	  Landscape08Vtx, };
-
-btScalar* LandscapeNml[] =
-	{ Landscape01Nml, Landscape02Nml, Landscape03Nml, Landscape04Nml, Landscape05Nml, Landscape06Nml, Landscape07Nml,
-	  Landscape08Nml, };
-
-btScalar* LandscapeTex[] =
-	{ Landscape01Tex, Landscape02Tex, Landscape03Tex, Landscape04Tex, Landscape05Tex, Landscape06Tex, Landscape07Tex,
-	  Landscape08Tex, };
 
 unsigned short* LandscapeIdx[] =
 	{ Landscape01Idx, Landscape02Idx, Landscape03Idx, Landscape04Idx, Landscape05Idx, Landscape06Idx, Landscape07Idx,

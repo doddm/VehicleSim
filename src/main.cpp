@@ -1,4 +1,5 @@
 #include <iostream>
+#include <VehicleSimBeta/src/physics/VehicleConfig.h>
 #include "Utils/b3Clock.h"
 #include "CommonInterfaces/CommonExampleInterface.h"
 #include "VehicleSim.h"
@@ -61,6 +62,14 @@ void MyKeyboardCallback(int key, int state)
 
 int main(int argc, char* argv[])
 {
+
+	VehicleConfigData vcd;
+	vcd.m_bodyWidth = 1.9;
+	vcd.m_bodyHeight = 1.8;
+	vcd.m_bodyLength = 3.5;
+	VehicleConfig config(vcd);
+	std::cout << config.m_bodyHeight << std::endl;
+
 	SimpleOpenGL3App* app = new SimpleOpenGL3App("Vehicle Simulation", 1920, 1080, true);
 
 	app->m_window->setKeyboardCallback(MyKeyboardCallback);
@@ -72,6 +81,7 @@ int main(int argc, char* argv[])
 
 	vehicleSim = VehicleSimCreateFunc(options);
 	vehicleSim->initPhysics();
+	((VehicleSim*) vehicleSim)->addVehicle(config, btVector3(0, 1, 10));
 	vehicleSim->resetCamera();
 
 	b3Clock clock;
