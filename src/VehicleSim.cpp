@@ -291,15 +291,15 @@ void VehicleSim::stepSimulation(float deltaTime)
 
 void VehicleSim::renderScene()
 {
-	/// update wheel visuals
+	/// update tire rendering
 	for (int i = 0; i < m_vehicle->getNumTires(); i++)
 	{
 		CommonRenderInterface* renderer = m_guiHelper->getRenderInterface();
 		if (renderer)
 		{
-			btTransform tr = m_vehicle->getTire(i).m_worldTransform;
-			btVector3 pos = tr.getOrigin();
-			btQuaternion orn = tr.getRotation();
+			const btTransform& tr = m_vehicle->getTire(i).m_worldTransform;
+			const btVector3& pos = tr.getOrigin();
+			const btQuaternion& orn = tr.getRotation();
 			renderer->writeSingleInstanceTransformToCPU(pos, orn, m_tireRenderInstances[i]);
 		}
 	}

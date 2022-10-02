@@ -62,7 +62,7 @@ void Vehicle::updateTireFriction(btScalar step)
 	{
 		if (!m_tires[i].m_isContactingGround)
 		{
-			break;
+			continue;
 		}
 
 		btVector3 relativePosition = m_tires[i].m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
@@ -380,8 +380,7 @@ bool Vehicle::castRay(Tire& tire)
 		tire.m_currentSuspensionLength = tire.m_suspensionLength - tire.m_penetrationDepth;
 
 		///get relative position of tire contact to chassis CoM in world space
-		btVector3
-			chassisCoMToTireContact = tire.m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
+		btVector3 chassisCoMToTireContact = tire.m_groundContactPosition - m_chassisRigidBody->getCenterOfMassPosition();
 		///relative velocity of the tire to the ground in world space
 		btVector3 contactVelocity = m_chassisRigidBody->getVelocityInLocalPoint(chassisCoMToTireContact);
 		btScalar normalVelocity = contactVelocity.dot(tire.m_groundNormal);
