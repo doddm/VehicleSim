@@ -23,12 +23,10 @@ subject to the following restrictions:
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "CommonGraphicsAppInterface.h"
 #include "Bullet3Common/b3Scalar.h"
-#include "../../../external/bullet/examples/ExampleBrowser/CollisionShape2TriangleMesh.h"
+#include "ExampleBrowser/CollisionShape2TriangleMesh.h"
 #include "BulletSoftBody/btSoftBodyHelpers.h"
-
-#include "../../OpenGLWindow/ShapeData.h"
-
-#include "../../OpenGLWindow/SimpleCamera.h"
+#include "OpenGLWindow/ShapeData.h"
+#include "OpenGLWindow/SimpleCamera.h"
 
 #define BT_LINE_BATCH_SIZE 512
 

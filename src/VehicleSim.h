@@ -1,8 +1,8 @@
 #ifndef BULLETGAME_VEHICLESIM_H
 #define BULLETGAME_VEHICLESIM_H
 
-#include "examples/CommonExampleInterface.h"
 #include "CommonInterfaces/CommonGUIHelperInterface.h"
+#include "examples/CommonExampleInterface.h"
 #include "physics/Vehicle.h"
 #include "physics/VehicleConfig.h"
 

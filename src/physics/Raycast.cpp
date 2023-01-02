@@ -1,5 +1,6 @@
-#include <iostream>
 #include "Raycast.h"
+
+#include <iostream>
 
 Raycast::Raycast(btDynamicsWorld *dynamicsWorld)
     : m_dynamicsWorld(dynamicsWorld) {}

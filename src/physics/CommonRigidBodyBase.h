@@ -21,13 +21,13 @@ subject to the following restrictions:
 #define COMMON_RIGID_BODY_BASE_H
 
 #include "btBulletDynamicsCommon.h"
-#include "../examples/CommonExampleInterface.h"
-#include "../graphics/CommonGUIHelperInterface.h"
-#include "../graphics/CommonRenderInterface.h"
-#include "../graphics/CommonCameraInterface.h"
-#include "../graphics/CommonGraphicsAppInterface.h"
-#include "../graphics/CommonWindowInterface.h"
 #include "BulletCollision/NarrowPhaseCollision/btRaycastCallback.h"
+#include "examples/CommonExampleInterface.h"
+#include "graphics/CommonGUIHelperInterface.h"
+#include "graphics/CommonRenderInterface.h"
+#include "graphics/CommonCameraInterface.h"
+#include "graphics/CommonGraphicsAppInterface.h"
+#include "graphics/CommonWindowInterface.h"
 
 struct CommonRigidBodyBase : public CommonExampleInterface
 {

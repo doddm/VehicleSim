@@ -1,6 +1,8 @@
 #ifndef BULLETGAME_SRC_UTIL_DEBUGUTIL_H_
 #define BULLETGAME_SRC_UTIL_DEBUGUTIL_H_
 
+#include "btBulletDynamicsCommon.h"
+
 #include <iostream>
 
  class DebugUtil

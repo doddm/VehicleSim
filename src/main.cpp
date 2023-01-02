@@ -1,17 +1,11 @@
-#include <iostream>
-#include <VehicleSimBeta/src/physics/VehicleConfig.h>
-#include "Utils/b3Clock.h"
 #include "CommonInterfaces/CommonExampleInterface.h"
+#include "graphics/OpenGLGuiHelper.h"
+#include "OpenGLWindow/SimpleOpenGL3App.h"
+#include "OpenGLWindow/OpenGLInclude.h"
+#include "Utils/b3Clock.h"
 #include "VehicleSim.h"
 
-#include "../external/bullet/examples/OpenGLWindow/SimpleOpenGL3App.h"
-#include "../external/bullet/examples/OpenGLWindow/OpenGLInclude.h"
-
-#include "graphics/OpenGLGuiHelper.h"
-
-static const double k_microsecondsPerSecond = 1e6;
 static CommonWindowInterface* s_window = 0;
-static double gMinUpdateTimeMicroSecs = 1000.;
 CommonExampleInterface* vehicleSim;
 
 static bool renderVisualGeometry = true;
@@ -62,13 +56,11 @@ void MyKeyboardCallback(int key, int state)
 
 int main(int argc, char* argv[])
 {
-
 	VehicleConfigData vcd;
 	vcd.m_bodyWidth = 1.9;
 	vcd.m_bodyHeight = 1.8;
 	vcd.m_bodyLength = 3.5;
 	VehicleConfig config(vcd);
-	std::cout << config.m_bodyHeight << std::endl;
 
 	SimpleOpenGL3App* app = new SimpleOpenGL3App("Vehicle Simulation", 1920, 1080, true);
 
@@ -88,11 +80,13 @@ int main(int argc, char* argv[])
 
 	while (!app->m_window->requestedExit())
 	{
+		constexpr double k_microsecondsPerSecond = 1e6;
 		float deltaTimeInSeconds = clock.getTimeMicroseconds() / k_microsecondsPerSecond;
 		if (deltaTimeInSeconds > 0.1)
 		{
 			deltaTimeInSeconds = 0.1;
 		}
+		constexpr double gMinUpdateTimeMicroSecs = 1000.;
 		if (deltaTimeInSeconds < (gMinUpdateTimeMicroSecs / k_microsecondsPerSecond))
 		{
 			b3Clock::usleep(gMinUpdateTimeMicroSecs / 10.);

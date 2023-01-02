@@ -20,7 +20,7 @@ subject to the following restrictions:
 #ifndef B3G_WINDOW_INTERFACE_H
 #define B3G_WINDOW_INTERFACE_H
 
-#include "../input/CommonCallbacks.h"
+#include "input/CommonCallbacks.h"
 
 struct b3gWindowConstructionInfo
 {

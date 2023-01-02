@@ -24,7 +24,7 @@ subject to the following restrictions:
 class btCollisionShape;
 class btTransform;
 #include "LinearMath/btAlignedObjectArray.h"
-#include "../../OpenGLWindow/GLInstanceGraphicsShape.h"
+#include "OpenGLWindow/GLInstanceGraphicsShape.h"
 
 struct OpenGLGuiHelper : public GUIHelperInterface
 {

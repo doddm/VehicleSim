@@ -1,12 +1,11 @@
 // Adapted from Demos in Bullet Physics SDK https://bulletphysics.org
 
-#include "VehicleSim.h"
 #include "btBulletDynamicsCommon.h"
 #include "graphics/CommonRenderInterface.h"
 #include "physics/CommonRigidBodyBase.h"
+#include "VehicleSim.h"
 
 #include <iostream>
-#include <VehicleSimBeta/src/physics/Aerodynamics.h>
 
 float terrainExtent = 100;
 float terrainThickness = 10;

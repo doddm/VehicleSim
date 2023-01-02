@@ -6,15 +6,6 @@ set(CMAKE_CXX_STANDARD 14)
 add_subdirectory(external/bullet)
 add_subdirectory(src)
 
-set(INCLUDE_DIRS
-        external/bullet/src
-        )
-
-#target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
-#
-#target_link_directories(${PROJECT_NAME} PUBLIC lib)
-#target_link_libraries(${PROJECT_NAME} BulletDynamics BulletCollision LinearMath Bullet3Common)
-
 if(MSVC)
     if (NOT USE_MSVC_RUNTIME_LIBRARY_DLL)
         # We statically link to reduce dependencies

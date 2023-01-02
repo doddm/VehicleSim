@@ -2,6 +2,7 @@
 #define BULLETGAME_SRC_PHYSICS_AERODYNAMICS_H_
 
 #include "BulletDynamics/Dynamics/btRigidBody.h"
+
 class Aerodynamics
 {
  public:
