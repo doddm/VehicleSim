@@ -70,7 +70,6 @@ void Vehicle::updateTireFriction(btScalar step)
 		btVector3 chassisVelocityAtContactPointWorld = m_chassisRigidBody->getVelocityInLocalPoint(relativePosition);
 
 		m_tires[i].m_groundContactVelWorld = chassisVelocityAtContactPointWorld;
-		m_tires[i].m_frictionDirWorld = -chassisVelocityAtContactPointWorld.normalized();
 
 		const btVector3& groundNormal = m_tires[i].m_groundNormal;
 
@@ -122,7 +121,6 @@ void Vehicle::updateSuspension(btScalar step)
 		Tire& tire = m_tires[i];
 		if (!tire.m_isContactingGround)
 		{
-			tire.m_suspensionForce = btScalar(0.0);
 			break;
 		}
 		btScalar displacement = tire.m_currentSuspensionLength - tire.m_suspensionLength;
@@ -133,10 +131,6 @@ void Vehicle::updateSuspension(btScalar step)
 		btScalar damperForceMag = tire.m_velocityLocal * m_suspensionDamping;
 		btVector3 damperForce = damperForceMag * tire.m_suspensionDirWorld;
 
-		// prevent negative force
-		tire.m_suspensionForce = btMax(btScalar(0.0), -mass * (springForceMag + damperForceMag));
-		// clamp large forces
-		tire.m_suspensionForce = btMin(btScalar(4000.0), -mass * (springForceMag + damperForceMag));
 		btVector3 suspensionImpulse = step * mass * (springForce + damperForce);
 
 		m_chassisRigidBody->applyImpulse(suspensionImpulse, relativePosition);
